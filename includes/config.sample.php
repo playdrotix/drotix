@@ -24,7 +24,7 @@ return array(
     // ---------- Site ----------
     'site_name'     => 'Drotix Tic Tac Toe',
     'site_url'      => 'https://play.drotix.com',
-    'support_email' => 'support@play.drotix.com',
+    'support_email' => 'support@playdrotix.in',
     'timezone'      => 'Asia/Kolkata',
     'deletion_days' => 2,                                       // account deletion timeline shown and tracked
     'allowed_origins' => array('https://play.drotix.com'),     // forms only accepted from these sites ([] = do not check)
@@ -41,7 +41,7 @@ return array(
     'enable_hash_tool'     => false,   // set true ONLY while you create a hash, then set back to false
 
     // ---------- Email notifications (optional, uses PHP mail()) ----------
-    'notify_admin_email' => 'support@play.drotix.com',          // '' = off
+    'notify_admin_email' => 'support@playdrotix.in',          // '' = off
     'mail_from'          => 'no-reply@play.drotix.com',
 
     // ---------- Data Explorer (admin -> Data Explorer) ----------
