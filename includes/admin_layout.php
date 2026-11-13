@@ -85,7 +85,7 @@ function admin_head($title, $active) {
     );
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<meta name="robots" content="noindex,nofollow"><title>' . e($title) . ' - Drotix Admin</title>';
-    echo '<link rel="stylesheet" href="/adminhttps://playdrotix.in/assets/admin.css"><script src="/adminhttps://playdrotix.in/assets/admin.js" defer></script></head><body><div class="shell"><aside class="side">';
+    echo '<link rel="stylesheet" href="/admin/assets/admin.css"><script src="/admin/assets/admin.js" defer></script></head><body><div class="shell"><aside class="side">';
     echo '<div class="logo"><span class="sh"></span><b>DROTIX</b><small>Admin</small></div><nav>';
     foreach ($nav as $k => $v) {
         echo '<a href="' . $v[0] . '"' . ($k === $active ? ' class="on"' : '') . '>' . e($v[1]) . '</a>';

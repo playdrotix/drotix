@@ -8,7 +8,7 @@ $hash = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password']) && strlen($_POST['password']) >= 10) {
     $hash = password_hash((string) $_POST['password'], PASSWORD_DEFAULT);
 }
-?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Make password hash</title><link rel="stylesheet" href="/adminhttps://playdrotix.in/assets/admin.css"></head>
+?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Make password hash</title><link rel="stylesheet" href="/admin/assets/admin.css"></head>
 <body><div class="login"><form class="box" method="post"><h1>Password hash</h1>
 <div class="flash err">Turn this tool off after use: set 'enable_hash_tool' => false in config.php.</div>
 <label>New admin password (10+ characters)<input name="password" type="text" minlength="10" required autocomplete="off"></label>

@@ -1,6 +1,6 @@
 /* ====== SITE SETTINGS: change these before you publish ====== */
 var SITE = {
-  email: 'support@playdrotix.com',   // shown on the site and used if the form server is unreachable
+  email: 'support@play.drotix.com',   // shown on the site and used if the form server is unreachable
   api: '/api/submit/',                // PHP endpoint that saves every form to Supabase
   playStore: '#', appStore: '#'       // add real store links when the app is live
 };

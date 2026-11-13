@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Admin login - Drotix</title><link rel="stylesheet" href="/adminhttps://playdrotix.in/assets/admin.css"></head>
+?><!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Admin login - Drotix</title><link rel="stylesheet" href="/admin/assets/admin.css"></head>
 <body><div class="login"><form class="box" method="post" autocomplete="off">
 <div class="shapes" aria-hidden="true"><i></i><i></i><i></i></div>
 <h1>Drotix admin</h1><div class="muted">Tic Tac Toe control room</div>
