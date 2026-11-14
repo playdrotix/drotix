@@ -192,3 +192,23 @@ html.menu-open{overflow:hidden}html.menu-open .site-header{background:transparen
 .brand span{line-height:1.1}.brand small{display:block;font-size:10px;letter-spacing:5px;color:var(--teal);font-weight:600;margin-top:2px}
 .f-addr{font-style:normal;color:var(--muted);line-height:1.7;font-size:14px;border-left:2px solid var(--magenta);padding-left:14px}.f-addr a{color:var(--pink)}.f-addr b{color:var(--text)}
 .f-word{font-size:clamp(64px,22vw,330px)}
+
+/* ===== social: follow, connect, share ===== */
+[hidden]{display:none!important}
+.f-social{display:flex;justify-content:space-between;align-items:center;gap:28px;flex-wrap:wrap;padding:34px 0;margin-top:46px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;z-index:3}
+.f-social-t h3{font-size:30px;margin:6px 0 4px;letter-spacing:1px}.f-social-t p{margin:0;color:var(--muted);max-width:38ch}
+.f-social-b{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.soc{display:inline-flex;align-items:center;gap:12px;padding:12px 18px;border:1px solid var(--border2);border-radius:16px;background:var(--surface);color:var(--text);text-decoration:none;cursor:pointer;font:inherit;transition:transform .25s,border-color .25s,box-shadow .25s}
+.soc svg{width:26px;height:26px;flex:none;color:var(--pink);transition:transform .35s,color .25s}
+.soc span{display:grid;line-height:1.2;text-align:left}.soc b{font-size:15px}.soc small{color:var(--muted);font-size:12px}
+.soc:hover,.soc:focus-visible{transform:translateY(-4px);border-color:var(--magenta);box-shadow:0 12px 30px -12px var(--magenta)}.soc:hover svg{transform:rotate(-8deg) scale(1.15);color:var(--teal)}
+.soc-share{border-color:var(--magenta);background:linear-gradient(135deg,rgba(237,27,118,.2),var(--surface))}
+.share-wrap{position:relative}
+.share-pop{position:absolute;right:0;bottom:calc(100% + 12px);min-width:230px;display:grid;gap:4px;padding:8px;background:var(--surface);border:1px solid var(--magenta);border-radius:16px;box-shadow:0 20px 50px -10px rgba(0,0,0,.8),0 0 30px -8px var(--magenta);z-index:30}
+.share-pop a,.share-pop button{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;border-radius:10px;border:0;background:transparent;color:var(--text);font:600 14px 'Outfit',sans-serif;text-align:left;text-decoration:none;cursor:pointer}
+.share-pop a:hover,.share-pop button:hover,.share-pop a:focus-visible,.share-pop button:focus-visible{background:var(--surface2)}
+.share-pop svg{width:20px;height:20px;color:var(--pink);flex:none}
+.soc-row{display:flex;gap:10px;flex-wrap:wrap}.soc-i{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:1px solid var(--border2);background:var(--bg);color:var(--text);transition:transform .25s,border-color .25s,color .25s}
+.soc-i svg{width:22px;height:22px}.soc-i:hover,.soc-i:focus-visible{transform:translateY(-3px) rotate(-6deg);border-color:var(--magenta);color:var(--pink)}
+.menu-soc{display:grid;gap:10px;width:100%;margin-top:6px}.menu-soc>div{display:flex;gap:12px}.menu-soc .soc-i{width:50px;height:50px}
+@media(max-width:700px){.f-social{flex-direction:column;align-items:flex-start}.f-social-b{width:100%}.soc{flex:1 1 calc(50% - 12px);min-width:150px}.share-wrap{flex:1 1 100%}.share-wrap .soc{width:100%}.share-pop{right:auto;left:0;right:0}}

@@ -2,10 +2,30 @@
 var SITE = {
   email: 'support@playdrotix.in',   // shown on the site and used if the form server is unreachable
   api: '/api/submit/',                // PHP endpoint that saves every form to Supabase
-  playStore: '#', appStore: '#'       // add real store links when the app is live
+  playStore: '#', appStore: '#',      // add real store links when the app is live
+  // Social profiles (username: playdrotix). Change a link here and every page updates.
+  // LinkedIn is set as a company page; if @playdrotix is a personal profile use https://www.linkedin.com/in/playdrotix/
+  social: {
+    instagram: 'https://www.instagram.com/playdrotix/',
+    facebook: 'https://www.facebook.com/playdrotix',
+    snapchat: 'https://www.snapchat.com/add/playdrotix',
+    linkedin: 'https://www.linkedin.com/company/playdrotix/'
+  }
 };
 (function () {
   'use strict';
+  /* Opening the files straight from a folder (file://) has no web server, so "folder/" links would show a file list.
+     Add index.html to such links only in that case. On a real server nothing changes. */
+  if (location.protocol === 'file:') {
+    document.querySelectorAll('a[href]').forEach(function (a) {
+      var h = a.getAttribute('href');
+      if (!h || /^(https?:|mailto:|tel:|#)/i.test(h)) return;
+      var m = h.match(/^([^#?]*)([?#].*)?$/), p = m[1], rest = m[2] || '';
+      if (p === '' ) return;
+      if (p === '.' || p === './' || /\/$/.test(p)) { a.setAttribute('href', (p === '.' ? './' : p) + 'index.html' + rest); }
+    });
+  }
+  document.querySelectorAll('[data-soc]').forEach(function (a) { var u = SITE.social && SITE.social[a.getAttribute('data-soc')]; if (u) { a.href = u; } });
   document.querySelectorAll('[data-year]').forEach(function (n) { n.textContent = new Date().getFullYear(); });
   document.querySelectorAll('[data-email]').forEach(function (a) { a.textContent = SITE.email; a.href = 'mailto:' + SITE.email; });
   document.querySelectorAll('a[data-store]').forEach(function (a) {
@@ -94,4 +114,32 @@ var SITE = {
         .then(function () { if (btn) { btn.disabled = false; } });
     });
   });
+
+  /* share button (native share where available, plus WhatsApp / Facebook / LinkedIn / Snapchat / copy link) */
+  var sBtn = document.querySelector('[data-share-btn]'), sPop = document.querySelector('[data-share-pop]');
+  if (sBtn && sPop) {
+    var canon = document.querySelector('link[rel=canonical]');
+    var pUrl = canon ? canon.href : location.href, pTitle = document.title;
+    var pText = 'Drotix Tic Tac Toe: Three in a row. One survivor. Coming soon.';
+    var enc = encodeURIComponent;
+    var links = {
+      wa: 'https://wa.me/?text=' + enc(pText + ' ' + pUrl),
+      fb: 'https://www.facebook.com/sharer/sharer.php?u=' + enc(pUrl),
+      li: 'https://www.linkedin.com/sharing/share-offsite/?url=' + enc(pUrl),
+      sc: 'https://www.snapchat.com/scan?attachmentUrl=' + enc(pUrl)
+    };
+    Object.keys(links).forEach(function (k) { var a = sPop.querySelector('[data-share=' + k + ']'); if (a) { a.href = links[k]; } });
+    var nat = sPop.querySelector('[data-share=native]');
+    if (nat && navigator.share) { nat.hidden = false; nat.addEventListener('click', function () { navigator.share({ title: pTitle, text: pText, url: pUrl }).catch(function () {}); setShare(false); }); }
+    var setShare = function (open) { sPop.hidden = !open; sBtn.setAttribute('aria-expanded', String(open)); };
+    sBtn.addEventListener('click', function (e) { e.stopPropagation(); setShare(sPop.hidden); });
+    document.addEventListener('click', function (e) { if (!sPop.hidden && !sPop.contains(e.target)) { setShare(false); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !sPop.hidden) { setShare(false); sBtn.focus(); } });
+    var cp = sPop.querySelector('[data-share=copy]'), lab = sPop.querySelector('[data-copy-label]');
+    if (cp) cp.addEventListener('click', function () {
+      var done = function () { lab.textContent = 'Link copied!'; setTimeout(function () { lab.textContent = 'Copy link'; setShare(false); }, 1200); };
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(pUrl).then(done, function () { window.prompt('Copy this link', pUrl); }); }
+      else { window.prompt('Copy this link', pUrl); }
+    });
+  }
 })();

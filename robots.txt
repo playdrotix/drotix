@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
-Sitemap: https://play.drotix.com/sitemap.xml
+Sitemap: https://playdrotix.in/sitemap.xml

@@ -20,9 +20,9 @@ Backend: /api/submit/ (forms) · /admin/ (login) with Messages, Deletion request
 ## Setup (about 15 minutes)
 1. **Supabase**: create a project. Open SQL Editor, paste `database/schema.sql`, run it.
    Then Project Settings -> API: copy the *Project URL* and the **service_role** key.
-2. **Upload** all files to the web root of play.drotix.com (cPanel File Manager or FTP).
+2. **Upload** all files to the web root of playdrotix.in (cPanel File Manager or FTP).
 3. **Config**: copy `includes/config.sample.php` to `includes/config.php` and fill in
-   `supabase_url`, `supabase_key`. Check `allowed_origins` (your real site address, with https).
+   `supabase_url`, `supabase_key`. Check `allowed_origins` (your real site address with https, both playdrotix.in and www.playdrotix.in are already listed).
 4. **Admin password**: in config.php set `'enable_hash_tool' => true`, open `/admin/make-hash/`,
    type a strong password, copy the hash into `'admins' => array('admin' => '...')`, then set
    `enable_hash_tool` back to `false`. (Or run: `php -r "echo password_hash('YourPassword', PASSWORD_DEFAULT);"`)
@@ -55,6 +55,13 @@ Open `includes/config.php` -> `explorer`. Add one line per table:
 * Nginx instead of Apache? Add: `location ~ ^/(includes|database)/ { deny all; }` and `location ~ /\. { deny all; }`,
   keep `index index.html index.php;` and use the normal PHP-FPM block. If you can, put `includes/` above the web root.
 * Do not upload `config.php` anywhere public or share it.
+
+## Social media (username: playdrotix)
+The footer has **Follow and connect** buttons for Instagram, Facebook, Snapchat and LinkedIn, plus a **Share** button
+(WhatsApp, Facebook, LinkedIn, Snapchat, native phone share and Copy link). The mobile menu also shows the follow icons.
+To change a profile link, edit `SITE.social` at the top of `assets/js/main.js` (one place, every page updates).
+LinkedIn is set to a company page (`/company/playdrotix/`). If it is a personal profile, change it to `/in/playdrotix/`.
+Instagram has no web share link, so people share to it from the phone's Share sheet.
 
 ## Please check before launch
 * I could not run PHP in my build environment. The pages and JavaScript were tested against a mock of the API,

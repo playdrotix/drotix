@@ -23,11 +23,11 @@ return array(
 
     // ---------- Site ----------
     'site_name'     => 'Drotix Tic Tac Toe',
-    'site_url'      => 'https://play.drotix.com',
+    'site_url'      => 'https://playdrotix.in',
     'support_email' => 'support@playdrotix.in',
     'timezone'      => 'Asia/Kolkata',
     'deletion_days' => 2,                                       // account deletion timeline shown and tracked
-    'allowed_origins' => array('https://play.drotix.com'),     // forms only accepted from these sites ([] = do not check)
+    'allowed_origins' => array('https://playdrotix.in', 'https://www.playdrotix.in'),     // forms only accepted from these sites ([] = do not check)
     'trust_proxy_header' => '',                                 // e.g. 'HTTP_CF_CONNECTING_IP' if you use Cloudflare
 
     // ---------- Admin panel (/admin/) ----------
@@ -42,7 +42,7 @@ return array(
 
     // ---------- Email notifications (optional, uses PHP mail()) ----------
     'notify_admin_email' => 'support@playdrotix.in',          // '' = off
-    'mail_from'          => 'no-reply@play.drotix.com',
+    'mail_from'          => 'no-reply@playdrotix.in',
 
     // ---------- Data Explorer (admin -> Data Explorer) ----------
     // Read any Supabase table: add one line per table. 'url' and 'key' can be null to use the
