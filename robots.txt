@@ -3,3 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 Sitemap: https://playdrotix.in/sitemap.xml
+g
