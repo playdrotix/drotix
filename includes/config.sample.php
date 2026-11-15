@@ -42,7 +42,7 @@ return array(
 
     // ---------- Email notifications (optional, uses PHP mail()) ----------
     'notify_admin_email' => 'support@playdrotix.in',          // '' = off
-    'mail_from'          => 'no-reply@play.drotix.com',
+    'mail_from'          => 'no-reply@playdrotix.in',
 
     // ---------- Data Explorer (admin -> Data Explorer) ----------
     // Read any Supabase table: add one line per table. 'url' and 'key' can be null to use the

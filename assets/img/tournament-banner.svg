@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 628" width="1200" height="628" role="img" aria-label="Drotix Cup Season 1 tournament banner">
+<defs><radialGradient id="a" cx="100%" cy="0" r="90%"><stop offset="0" stop-color="#5a0f36"/><stop offset=".6" stop-color="#0A0A0C"/></radialGradient>
+<radialGradient id="b" cx="0" cy="100%" r="70%"><stop offset="0" stop-color="#0f3a38"/><stop offset="1" stop-color="#0A0A0C" stop-opacity="0"/></radialGradient>
+<linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#ED1B76"/><stop offset=".5" stop-color="#FF4A99"/><stop offset="1" stop-color="#2FB8B4"/></linearGradient></defs>
+<rect width="1200" height="628" fill="url(#a)"/><rect width="1200" height="628" fill="url(#b)"/>
+<g fill="none" stroke="#ED1B76" stroke-width="10" stroke-linejoin="round" opacity=".9"><circle cx="905" cy="170" r="62"/><path d="M1010 240l72 124H938z"/><rect x="820" y="300" width="110" height="110" rx="4"/></g>
+<g opacity=".08" fill="none" stroke="#fff" stroke-width="3"><path d="M0 520h1200M0 580h1200M120 0v628M180 0v628"/></g>
+<rect x="60" y="62" width="250" height="40" rx="20" fill="#2FB8B4"/><text x="185" y="89" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="20" letter-spacing="4" fill="#06201f">SEASON 1 · LIVE</text>
+<text x="60" y="210" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="112" letter-spacing="3" fill="#fff">DROTIX</text>
+<text x="60" y="318" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="112" letter-spacing="3" fill="url(#g)">CUP</text>
+<text x="60" y="378" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="30" letter-spacing="3" fill="#A8A8B5">TIC TAC TOE TOURNAMENT</text>
+<g font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="24" fill="#fff"><rect x="60" y="414" width="250" height="64" rx="14" fill="#17171C" stroke="#3A3A46" stroke-width="2"/><text x="185" y="444" text-anchor="middle" font-size="14" fill="#A8A8B5" letter-spacing="3">PRIZE POOL</text><text x="185" y="469" text-anchor="middle" fill="#FFC24D">5,000 COINS</text>
+<rect x="326" y="414" width="250" height="64" rx="14" fill="#17171C" stroke="#3A3A46" stroke-width="2"/><text x="451" y="444" text-anchor="middle" font-size="14" fill="#A8A8B5" letter-spacing="3">PLAYERS</text><text x="451" y="469" text-anchor="middle">32 · KNOCKOUT</text>
+<rect x="592" y="414" width="250" height="64" rx="14" fill="#17171C" stroke="#3A3A46" stroke-width="2"/><text x="717" y="444" text-anchor="middle" font-size="14" fill="#A8A8B5" letter-spacing="3">EVERY SATURDAY</text><text x="717" y="469" text-anchor="middle">8:00 PM IST</text></g>
+<rect x="60" y="518" width="360" height="62" rx="14" fill="#D4156B"/><text x="240" y="559" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="26" letter-spacing="4" fill="#fff">ENTER THE GAME</text>
+<text x="1140" y="590" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="20" letter-spacing="2" fill="#A8A8B5">playdrotix.in</text>
+<text x="1140" y="560" text-anchor="end" font-family="Arial,Helvetica,sans-serif" font-size="15" fill="#6d6d7a">Virtual coins only · no real-money prizes</text>
+</svg>
