@@ -120,3 +120,11 @@ Note: I could not run PHP here, so test both new forms and both new admin pages 
 (and the two v2 lines if not added yet); (c) upload everything and purge the cache.
 Notes: messages sent BEFORE v3 have no browser ID, so they can only be answered by email. Notifications reach a visitor
 only in the same browser. Browsers with Do Not Track on are not counted and get no website notifications.
+
+## v4 fixes (notifications not arriving)
+* `supabase_key` must be the **Secret key** (`sb_secret_...`, Project Settings -> API Keys), not the publishable key.
+  `sb_` keys are now sent in the `apikey` header only (`includes/supabase.php`).
+* A visitor ID is now always created when a form is sent (`main.js`), and the counter script was renamed
+  `assets/js/pulse.js` because ad blockers block files called "track".
+* Admin -> **Setup check** tests the key, every table/column, write access and whether messages carry a visitor ID.
+* Messages sent before v3 have no visitor ID and can only be answered by email. Test with a NEW message.

@@ -95,7 +95,11 @@ var SITE = {
       if (!f.checkValidity()) { f.reportValidity(); return; }
       var data = {}; new FormData(f).forEach(function (v, k) { data[k] = v; });
       data.type = f.dataset.type || 'contact';
-      try { var v0 = localStorage.getItem('drotix_vid'); if (v0) { data.vid = v0; } } catch (e0) {}
+      try {
+        var v0 = localStorage.getItem('drotix_vid');
+        if (!v0) { var ra = new Uint8Array(12); (window.crypto || window.msCrypto).getRandomValues(ra); v0 = Array.prototype.map.call(ra, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); localStorage.setItem('drotix_vid', v0); }
+        data.vid = v0;
+      } catch (e0) {}
       if (f.dataset.source) { data.source = f.dataset.source; }
       data.elapsed = Date.now() - t0;
       var fallback = function () {   // server not reachable: open the visitor's email app instead

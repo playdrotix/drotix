@@ -84,6 +84,7 @@ function admin_head($title, $active) {
         'tour' => array('/admin/tournament/', 'Tournament sign-ups'),
         'vis' => array('/admin/visitors/', 'Site visitors'),
         'exp' => array('/admin/explorer/', 'Data Explorer'),
+        'chk' => array('/admin/health/', 'Setup check'),
     );
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<meta name="robots" content="noindex,nofollow"><title>' . e($title) . ' - Drotix Admin</title>';

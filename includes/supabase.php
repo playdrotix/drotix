@@ -25,7 +25,8 @@ function sb_request($method, $table, $query = array(), $body = null, $headers = 
     $url = $base . '/rest/v1/' . $table;
     if (!empty($query)) { $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986); }
 
-    $h = array('apikey: ' . $key, 'Authorization: Bearer ' . $key, 'Accept: application/json');
+    $h = array('apikey: ' . $key, 'Accept: application/json');
+    if (strpos($key, 'eyJ') === 0) { $h[] = 'Authorization: Bearer ' . $key; }   // old-style JWT keys only; new sb_secret_ keys use the apikey header alone
     if ($body !== null) { $h[] = 'Content-Type: application/json'; }
     foreach ($headers as $k => $v) { $h[] = $k . ': ' . $v; }
 
@@ -104,3 +105,18 @@ function audit_log($action, $target = '', $details = '') {
 }
 /** Strip characters that have a meaning inside PostgREST filter values. */
 function pg_safe($s) { return trim(preg_replace('/[,()*%\\\\"\'`;:]/', ' ', (string) $s)); }
+
+/** What kind of key is configured? returns array(kind, ok, text). kind: secret | publishable | service_role | anon | unknown */
+function sb_key_kind($key) {
+    $key = (string) $key;
+    if (strpos($key, 'sb_secret_') === 0) { return array('secret', true, 'Secret key (correct).'); }
+    if (strpos($key, 'sb_publishable_') === 0) { return array('publishable', false, 'This is the PUBLISHABLE (public) key. The server needs the SECRET key (starts with sb_secret_).'); }
+    if (strpos($key, 'eyJ') === 0) {
+        $parts = explode('.', $key);
+        $pl = count($parts) > 1 ? json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true) : null;
+        $role = is_array($pl) && isset($pl['role']) ? $pl['role'] : '';
+        if ($role === 'service_role') { return array('service_role', true, 'service_role key (correct).'); }
+        if ($role === 'anon') { return array('anon', false, 'This is the public anon key. The server needs the service_role key.'); }
+    }
+    return array('unknown', false, 'Key format not recognised.');
+}
