@@ -95,6 +95,7 @@ var SITE = {
       if (!f.checkValidity()) { f.reportValidity(); return; }
       var data = {}; new FormData(f).forEach(function (v, k) { data[k] = v; });
       data.type = f.dataset.type || 'contact';
+      try { var v0 = localStorage.getItem('drotix_vid'); if (v0) { data.vid = v0; } } catch (e0) {}
       if (f.dataset.source) { data.source = f.dataset.source; }
       data.elapsed = Date.now() - t0;
       var fallback = function () {   // server not reachable: open the visitor's email app instead
@@ -107,7 +108,7 @@ var SITE = {
       fetch(SITE.api, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) })
         .then(function (r) { return r.json().then(function (j) { return j; }, function () { return null; }); })
         .then(function (j) {
-          if (j && typeof j.ok === 'boolean') { if (j.ok) { f.reset(); } show(j.ok, j.message || (j.ok ? 'Thank you!' : 'Something went wrong.')); }
+          if (j && typeof j.ok === 'boolean') { if (j.ok) { f.reset(); if (data.type === 'contact' || data.type === 'tournament') { try { localStorage.setItem('drotix_inbox', '1'); } catch (e1) {} window.dispatchEvent(new Event('drotix:sent')); } } show(j.ok, j.message || (j.ok ? 'Thank you!' : 'Something went wrong.')); }
           else { fallback(); }
         })
         .catch(fallback)

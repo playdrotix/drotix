@@ -21,6 +21,8 @@ return array(
         'audit'     => 'admin_audit_log',
         'visits'    => 'site_visits',
         'tournament'=> 'tournament_registrations',
+        'presence'  => 'site_presence',
+        'notify'    => 'site_notifications',
     ),
 
     // ---------- Site ----------
@@ -36,7 +38,7 @@ return array(
     // username => password hash. Create a hash with admin/make-hash (see README) or:
     //   php -r "echo password_hash('YourStrongPassword', PASSWORD_DEFAULT);"
     'admins' => array(
-        'admin' => 'PASTE_PASSWORD_HASH_HERE',
+        'admin' => '$2y$10$uQf4ew9v5g2ScGLW/K7fVew5uRKnz8RDECuvQmO3XStspPUO19CsO',
     ),
     'session_name'         => 'drotix_admin',
     'session_idle_minutes' => 30,

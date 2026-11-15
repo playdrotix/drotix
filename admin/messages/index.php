@@ -17,6 +17,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (sb_ok($r)) { audit_log('message_update', $id, $st); flash_set('ok', 'Saved.'); } else { flash_set('err', 'Could not save: ' . $r['error']); }
         redirect('/admin/messages/?id=' . $id);
     }
+    if ($act === 'reply') {
+        $body = clean_str(isset($_POST['reply']) ? $_POST['reply'] : '', 1500);
+        $viaMail = !empty($_POST['also_email']);
+        list($mrows, , ) = sb_select($table, array('id' => 'eq.' . $id), 1, 0);
+        if (!$mrows || strlen($body) < 2) { flash_set('err', 'Write a reply first.'); redirect('/admin/messages/?id=' . $id); }
+        $m = $mrows[0]; $sent = array();
+        if (!empty($m['visitor_id'])) {
+            $r = sb_insert(tbl('notify'), array(
+                'visitor_id' => $m['visitor_id'], 'kind' => 'reply', 'title' => 'Reply from the Drotix team',
+                'body' => $body, 'ref_table' => $table, 'ref_id' => $id,
+            ));
+            if (sb_ok($r)) { $sent[] = 'website notification'; } else { flash_set('err', 'Could not send the notification: ' . $r['error']); redirect('/admin/messages/?id=' . $id); }
+        }
+        if ($viaMail && !empty($m['email'])) {
+            $from = header_safe(cfg('mail_from', 'no-reply@localhost'));
+            $hdr = 'From: ' . $from . "\r\nReply-To: " . header_safe(cfg('support_email', $from)) . "\r\nContent-Type: text/plain; charset=UTF-8";
+            if (@mail($m['email'], '=?UTF-8?B?' . base64_encode('Re: ' . header_safe(isset($m['topic']) && $m['topic'] !== '' ? $m['topic'] : 'Your message to Drotix')) . '?=', $body . "\n\n-- Drotix team", $hdr)) { $sent[] = 'email'; }
+        }
+        if (!$sent) { flash_set('err', 'This visitor has no site ID (message sent before notifications existed). Tick "also email" to reply.'); redirect('/admin/messages/?id=' . $id); }
+        sb_update($table, array('id' => 'eq.' . $id), array('status' => 'replied'));
+        audit_log('message_reply', $id, implode('+', $sent));
+        flash_set('ok', 'Reply sent: ' . implode(' + ', $sent) . '.');
+        redirect('/admin/messages/?id=' . $id);
+    }
     if ($act === 'delete') {
         $r = sb_delete($table, array('id' => 'eq.' . $id));
         if (sb_ok($r)) { audit_log('message_delete', $id); flash_set('ok', 'Message deleted.'); } else { flash_set('err', 'Could not delete: ' . $r['error']); }
@@ -34,6 +58,16 @@ if ($id !== '' && uuid_ok($id)) {
     if ($m['status'] === 'new') { sb_update($table, array('id' => 'eq.' . $id), array('status' => 'read')); $m['status'] = 'read'; }
     echo '<div class="panel"><dl class="kv"><dt>Received</dt><dd>' . fmt_dt($m['created_at']) . '</dd><dt>Name</dt><dd>' . e($m['name']) . '</dd><dt>Email</dt><dd><a href="mailto:' . e($m['email']) . '?subject=' . rawurlencode('Re: Drotix Tic Tac Toe') . '">' . e($m['email']) . '</a></dd><dt>Topic</dt><dd>' . e(isset($m['topic']) ? $m['topic'] : '') . '</dd><dt>Status</dt><dd>' . badge($m['status']) . '</dd><dt>IP</dt><dd>' . e(isset($m['ip']) ? $m['ip'] : '') . '</dd></dl></div>';
     echo '<h2>Message</h2><div class="msg">' . e($m['message']) . '</div>';
+    $hasVid = !empty($m['visitor_id']);
+    echo '<h2>Reply to visitor</h2><form method="post" class="panel">' . csrf_field() . '<input type="hidden" name="id" value="' . e($id) . '"><input type="hidden" name="action" value="reply">';
+    echo '<p class="muted" style="margin-top:0">' . ($hasVid ? 'The visitor will see an animated notification (bell icon) the next time their browser is open on the website, and it stays in their inbox.' : 'No site ID is stored for this message (it was sent before notifications were added), so it can only be answered by email.') . '</p>';
+    echo '<textarea name="reply" maxlength="1500" required placeholder="Write your reply..."></textarea><div class="row" style="margin-top:12px"><label><input type="checkbox" name="also_email" value="1"' . ($hasVid ? '' : ' checked') . '> also send by email</label><button class="btn" type="submit">Send reply</button></div></form>';
+    list($hist, , ) = sb_select(tbl('notify'), array('ref_id' => 'eq.' . $id, 'order' => 'created_at.asc'), 20, 0);
+    if ($hist) {
+        echo '<h2>Replies sent</h2><div class="tbl-wrap"><table><tr><th>Sent</th><th>Reply</th><th>Visitor</th></tr>';
+        foreach ($hist as $h) { echo '<tr><td>' . fmt_dt($h['created_at']) . '</td><td style="white-space:pre-wrap">' . e($h['body']) . '</td><td>' . (!empty($h['read_at']) ? '<span class="badge b-teal">seen ' . fmt_dt($h['read_at']) . '</span>' : '<span class="badge b-gold">not seen yet</span>') . '</td></tr>'; }
+        echo '</table></div>';
+    }
     echo '<h2>Update</h2><form method="post" class="panel">' . csrf_field() . '<input type="hidden" name="id" value="' . e($id) . '"><input type="hidden" name="action" value="update">';
     echo '<div class="row"><select name="status">';
     foreach ($statuses as $s) { echo '<option' . ($m['status'] === $s ? ' selected' : '') . '>' . e($s) . '</option>'; }

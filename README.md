@@ -102,3 +102,21 @@ Instagram has no web share link, so people share to it from the phone's Share sh
 (b) add two lines to `tables` in `includes/config.php`: `'visits' => 'site_visits', 'tournament' => 'tournament_registrations',`
 (see `config.sample.php`); (c) upload all files and purge the cache. Privacy policy was updated for the visit counter.
 Note: I could not run PHP here, so test both new forms and both new admin pages once on the live site.
+
+## What is new in v3
+1. **Live "Players alive now" panel in the footer** (all pages): visitors online right now (active in the last 2 minutes),
+   visits today and total visits, with a Squid-Game style rolling counter, player dots that pop in / get crossed out,
+   a sweeping red scan line and "+N players entered the arena" messages. Updates every 20 s.
+   Files: `assets/js/live.js`, `assets/css/live.css`, `api/live/index.php` (public numbers only, cached 10 s).
+2. **Admin reply -> notification on the website.** Admin -> Messages -> open a message -> **Reply to visitor**.
+   The visitor sees an animated "invitation card" notification, a bell icon with a counter and an inbox
+   (same browser they used to send the message; checked every 25 s). Optional "also send by email".
+   The reply log shows "seen / not seen yet". In Admin -> Tournament sign-ups, **Save & notify** changes the status
+   and sends the player a notification with an optional message.
+   Files: `api/notify/index.php`, `admin/messages/`, `admin/tournament/`.
+
+**Upgrade steps:** (a) run the new "v3" block at the bottom of `database/schema.sql` in Supabase;
+(b) in `includes/config.php` -> `tables` add `'presence' => 'site_presence', 'notify' => 'site_notifications',`
+(and the two v2 lines if not added yet); (c) upload everything and purge the cache.
+Notes: messages sent BEFORE v3 have no browser ID, so they can only be answered by email. Notifications reach a visitor
+only in the same browser. Browsers with Do Not Track on are not counted and get no website notifications.

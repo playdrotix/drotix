@@ -106,3 +106,35 @@ alter table public.site_visits               enable row level security;
 alter table public.tournament_registrations  enable row level security;
 revoke all on table public.site_visits              from anon, authenticated;
 revoke all on table public.tournament_registrations from anon, authenticated;
+
+
+-- ===== v3: live presence + site notifications (safe to run again) =====
+create table if not exists public.site_presence (
+  id          uuid primary key default gen_random_uuid(),
+  visitor_id  text not null unique,
+  last_seen   timestamptz not null default now(),
+  path        text
+);
+create index if not exists site_presence_seen_idx on public.site_presence (last_seen desc);
+
+create table if not exists public.site_notifications (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  visitor_id  text not null,
+  kind        text not null default 'reply',      -- reply | status | info
+  title       text not null,
+  body        text,
+  ref_table   text,
+  ref_id      text,
+  read_at     timestamptz
+);
+create index if not exists site_notif_visitor_idx on public.site_notifications (visitor_id, created_at desc);
+create index if not exists site_notif_ref_idx     on public.site_notifications (ref_id);
+
+alter table public.contact_messages          add column if not exists visitor_id text;
+alter table public.tournament_registrations  add column if not exists visitor_id text;
+
+alter table public.site_presence       enable row level security;
+alter table public.site_notifications  enable row level security;
+revoke all on table public.site_presence      from anon, authenticated;
+revoke all on table public.site_notifications from anon, authenticated;

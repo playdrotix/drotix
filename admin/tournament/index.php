@@ -15,8 +15,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($act === 'status') {
             $st = isset($_POST['status']) ? (string) $_POST['status'] : '';
             if (in_array($st, $allowed, true)) {
+                list($old, , ) = sb_select($table, array('id' => 'eq.' . $id), 1, 0);
                 $r = sb_update($table, array('id' => 'eq.' . $id), array('status' => $st));
-                if (sb_ok($r)) { audit_log('tournament_status', $id, $st); flash_set('ok', 'Status updated.'); } else { flash_set('err', $r['error']); }
+                if (sb_ok($r)) {
+                    audit_log('tournament_status', $id, $st);
+                    $msg = clean_str(isset($_POST['note']) ? $_POST['note'] : '', 1000);
+                    $titles = array('confirmed' => 'You are in! Drotix Cup seat confirmed', 'waitlisted' => 'Drotix Cup: you are on the waiting list',
+                                    'rejected' => 'Drotix Cup: registration update', 'new' => '');
+                    $changed = $old && $old[0]['status'] !== $st;
+                    if ($old && !empty($old[0]['visitor_id']) && ($msg !== '' || ($changed && $titles[$st] !== ''))) {
+                        sb_insert(tbl('notify'), array('visitor_id' => $old[0]['visitor_id'], 'kind' => 'status',
+                            'title' => $titles[$st] !== '' ? $titles[$st] : 'Message about Drotix Cup',
+                            'body' => $msg !== '' ? $msg : 'Open your WhatsApp / email for the match details.', 'ref_table' => $table, 'ref_id' => $id));
+                        flash_set('ok', 'Status updated and the player was notified on the website.');
+                    } else { flash_set('ok', 'Status updated.'); }
+                } else { flash_set('err', $r['error']); }
             }
         }
     }
@@ -48,7 +61,7 @@ foreach ($rows as $w) {
     echo '<td>' . e(isset($w['city']) ? $w['city'] : '') . '<div class="muted">' . e(isset($w['experience']) ? $w['experience'] : '') . '</div></td><td>' . badge($w['status']) . '</td><td>';
     echo '<form method="post" class="row" style="gap:6px">' . csrf_field() . '<input type="hidden" name="id" value="' . e($w['id']) . '"><input type="hidden" name="action" value="status"><select name="status">';
     foreach ($allowed as $a) { echo '<option value="' . e($a) . '"' . ($w['status'] === $a ? ' selected' : '') . '>' . e($a) . '</option>'; }
-    echo '</select><button class="btn sm" type="submit">Save</button></form>';
+    echo '</select><input name="note" maxlength="1000" placeholder="Message to player (optional)" style="min-width:170px"><button class="btn sm" type="submit">Save &amp; notify</button></form>';
     echo '<form method="post" data-confirm="Remove this registration?">' . csrf_field() . '<input type="hidden" name="id" value="' . e($w['id']) . '"><input type="hidden" name="action" value="delete"><button class="btn danger sm" type="submit">Remove</button></form></td></tr>';
 }
 if (!$rows) { echo '<tr><td colspan="6" class="muted">No registrations yet.</td></tr>'; }

@@ -41,14 +41,32 @@ if (stripos($ct, 'application/json') !== false) {
     $in = $_POST;
 }
 $type = isset($in['type']) ? clean_str($in['type'], 20) : '';
-if (!in_array($type, array('contact', 'waitlist', 'delete', 'tournament', 'visit'), true)) { out(400, false, 'Unknown form.'); }
+if (!in_array($type, array('contact', 'waitlist', 'delete', 'tournament', 'visit', 'ping'), true)) { out(400, false, 'Unknown form.'); }
+
+/* anonymous browser id (random, made by assets/js/track.js) */
+$vidIn = preg_replace('/[^A-Za-z0-9_-]/', '', clean_str(isset($in['vid']) ? $in['vid'] : '', 64));
+if (strlen($vidIn) < 8) { $vidIn = null; }
+function presence_touch($vid, $path) {
+    if (!$vid) { return; }
+    sb_insert(tbl('presence'), array('visitor_id' => $vid, 'last_seen' => gmdate('c'), 'path' => $path),
+        array('on_conflict' => 'visitor_id'), 'resolution=merge-duplicates,return=minimal');
+}
+
+/* ---- heartbeat: keeps the visitor counted as "online" for the next 2 minutes ---- */
+if ($type === 'ping') {
+    $rlKey = 'ping:' . client_ip();
+    if (rl_count($rlKey, 600) >= 200) { out(200, true, 'ok'); }
+    rl_add($rlKey, 600);
+    presence_touch($vidIn, clean_str(isset($in['path']) ? $in['path'] : '', 200));
+    out(200, true, 'ok');
+}
 
 
 /* ---- site visit (no email, no spam timer; its own, higher rate limit) ---- */
 if ($type === 'visit') {
     $ip = client_ip();
     $rlKey = 'visit:' . $ip;
-    if (rl_count($rlKey, 600) >= 60) { out(200, true, 'ok'); }
+    if (rl_count($rlKey, 600) >= 200) { out(200, true, 'ok'); }
     rl_add($rlKey, 600);
     $vid = preg_replace('/[^A-Za-z0-9_-]/', '', clean_str(isset($in['vid']) ? $in['vid'] : '', 64));
     if (strlen($vid) < 8) { out(200, true, 'ok'); }
@@ -67,6 +85,7 @@ if ($type === 'visit') {
         'screen'     => clean_str(isset($in['screen']) ? $in['screen'] : '', 20),
         'ip'         => $ip, 'user_agent' => $ua,
     ));
+    presence_touch($vid, clean_str(isset($in['path']) ? $in['path'] : '', 200));
     out(200, true, 'ok');
 }
 
@@ -96,11 +115,11 @@ if ($type === 'contact') {
     if ($consent !== 'yes') { out(422, false, 'Please tick the consent box.'); }
     $r = sb_insert(tbl('contact'), array(
         'name' => $name, 'email' => $email, 'topic' => $topic, 'message' => $message,
-        'status' => 'new', 'ip' => $ip, 'user_agent' => $ua,
+        'status' => 'new', 'ip' => $ip, 'user_agent' => $ua, 'visitor_id' => $vidIn,
     ));
     if (!sb_ok($r)) { error_log('[drotix] contact insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
     send_notice('New contact message: ' . $topic, "From: $name <$email>\nTopic: $topic\n\n$message\n");
-    out(200, true, 'Thank you! We got your message and will reply soon.');
+    out(200, true, 'Thank you! We got your message. Our reply will pop up here on the website (bell icon) and may also reach your email.');
 }
 
 
@@ -119,7 +138,7 @@ if ($type === 'tournament') {
     $r = sb_insert(tbl('tournament'), array(
         'tournament' => 'Drotix Cup Season 1', 'name' => $name, 'email' => $email, 'phone' => $phone,
         'username' => $username, 'city' => $city, 'experience' => $exp,
-        'status' => 'new', 'ip' => $ip, 'user_agent' => $ua,
+        'status' => 'new', 'ip' => $ip, 'user_agent' => $ua, 'visitor_id' => $vidIn,
     ), array('on_conflict' => 'tournament,email'), 'resolution=ignore-duplicates,return=minimal');
     if (!sb_ok($r)) { error_log('[drotix] tournament insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
     send_notice('New tournament registration: ' . $username, "Name: $name\nPlayer: $username\nEmail: $email\nPhone: $phone\nCity: $city\nLevel: $exp\n");
