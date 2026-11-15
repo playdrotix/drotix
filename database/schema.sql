@@ -62,3 +62,47 @@ revoke all on table public.contact_messages  from anon, authenticated;
 revoke all on table public.waitlist_signups  from anon, authenticated;
 revoke all on table public.deletion_requests from anon, authenticated;
 revoke all on table public.admin_audit_log   from anon, authenticated;
+
+
+-- ===== v2: site visitors + tournament registrations (run this block again safely; it uses IF NOT EXISTS) =====
+create table if not exists public.site_visits (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  visitor_id  text not null,                 -- random id kept in the visitor's browser
+  session_id  text,
+  is_new      boolean not null default false, -- true on the very first visit of that browser
+  path        text,
+  referrer    text,
+  device      text,                           -- mobile / tablet / desktop
+  language    text,
+  screen      text,
+  ip          text,
+  user_agent  text
+);
+create index if not exists site_visits_created_idx on public.site_visits (created_at desc);
+create index if not exists site_visits_visitor_idx on public.site_visits (visitor_id);
+create index if not exists site_visits_new_idx     on public.site_visits (is_new);
+
+create table if not exists public.tournament_registrations (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  tournament  text not null default 'Drotix Cup Season 1',
+  name        text not null,
+  email       text not null,
+  phone       text not null,
+  username    text not null,                  -- in-game / player name
+  city        text,
+  experience  text,                           -- beginner / intermediate / pro
+  status      text not null default 'new' check (status in ('new','confirmed','waitlisted','rejected')),
+  admin_note  text,
+  ip          text,
+  user_agent  text,
+  unique (tournament, email)
+);
+create index if not exists tournament_reg_created_idx on public.tournament_registrations (created_at desc);
+create index if not exists tournament_reg_status_idx  on public.tournament_registrations (status);
+
+alter table public.site_visits               enable row level security;
+alter table public.tournament_registrations  enable row level security;
+revoke all on table public.site_visits              from anon, authenticated;
+revoke all on table public.tournament_registrations from anon, authenticated;

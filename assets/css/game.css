@@ -11,11 +11,11 @@
 .gp-timer{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:12px}
 .gp-timer i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--teal),var(--gold),var(--magenta));transform-origin:left;transition:transform .2s linear}
 .gp-status{text-align:center;font-weight:800;letter-spacing:2px;text-transform:uppercase;font-size:14px;min-height:22px;margin-bottom:10px}
-.gp-board{display:grid;gap:8px;margin:0 auto;width:100%;aspect-ratio:1;position:relative}
-.gp-board button{background:var(--surface);border:1.5px solid var(--border2);border-radius:14px;cursor:pointer;display:grid;place-items:center;padding:0;color:inherit;transition:transform .15s,border-color .15s,background .15s}
+.gp-board{display:grid;gap:8px;margin:0 auto;width:100%;aspect-ratio:1/1;position:relative;grid-auto-rows:minmax(0,1fr);grid-auto-columns:minmax(0,1fr)}
+.gp-board button{width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;background:var(--surface);border:1.5px solid var(--border2);border-radius:14px;cursor:pointer;display:grid;place-items:center;padding:0;color:inherit;transition:transform .15s,border-color .15s,background .15s}
 .gp-board button:hover:not(:disabled){border-color:var(--pink);transform:scale(1.04);background:var(--surface2)}
 .gp-board button:disabled{cursor:default}
-.gp-board button svg{width:62%;height:62%;animation:pop .35s both}
+.gp-board button svg{width:62%;height:62%;flex:none;animation:pop .35s both}
 .gp-board button.w{border-color:var(--gold);background:#2a2110;box-shadow:0 0 22px -4px var(--gold)}
 .gp-ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:center}
 .seg{display:inline-flex;border:1px solid var(--border2);border-radius:12px;overflow:hidden}

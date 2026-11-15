@@ -19,6 +19,8 @@ return array(
         'waitlist'  => 'waitlist_signups',
         'deletions' => 'deletion_requests',
         'audit'     => 'admin_audit_log',
+        'visits'    => 'site_visits',
+        'tournament'=> 'tournament_registrations',
     ),
 
     // ---------- Site ----------
@@ -51,6 +53,8 @@ return array(
         array('label' => 'Contact messages',   'url' => null, 'key' => null, 'table' => 'contact_messages'),
         array('label' => 'Deletion requests',  'url' => null, 'key' => null, 'table' => 'deletion_requests'),
         array('label' => 'Waitlist',           'url' => null, 'key' => null, 'table' => 'waitlist_signups'),
+        array('label' => 'Site visits',        'url' => null, 'key' => null, 'table' => 'site_visits'),
+        array('label' => 'Tournament registrations', 'url' => null, 'key' => null, 'table' => 'tournament_registrations'),
         // array('label' => 'App players', 'url' => 'https://YOUR-APP-PROJECT.supabase.co', 'key' => 'ITS-SERVICE-KEY', 'table' => 'profiles'),
     ),
 

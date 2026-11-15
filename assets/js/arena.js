@@ -24,13 +24,18 @@ if(tr){var sl=[].slice.call(tr.children),tabs=[].slice.call(d.querySelectorAll('
 /* popup */
 var p=d.getElementById('cup-pop');
 if(p){var last,KEY='drotix_cup_seen';
- function open(){last=d.activeElement;p.classList.add('on');d.body.style.overflow='hidden';p.querySelector('.pop-x').focus()}
+ var vi=p.querySelector('.pop-b'),vr=p.querySelector('.pv-reg'),card=p.querySelector('.pop-card'),bn=p.querySelector('.pop-card>img');
+ function view(reg){if(vi)vi.hidden=!!reg;if(vr)vr.hidden=!reg;if(bn)bn.style.display=reg?'none':'';card.scrollTop=0;if(reg){var f=vr.querySelector('input');if(f&&matchMedia('(min-width:700px)').matches)f.focus()}}
+ function open(reg){last=d.activeElement;view(!!reg);p.classList.add('on');d.body.style.overflow='hidden';if(!reg)p.querySelector('.pop-x').focus()}
  function close(){p.classList.remove('on');d.body.style.overflow='';try{sessionStorage.setItem(KEY,'1')}catch(e){}if(last&&last.focus)last.focus()}
  p.querySelectorAll('[data-close]').forEach(function(b){b.addEventListener('click',close)});
  p.addEventListener('click',function(e){if(e.target===p)close()});
  d.addEventListener('keydown',function(e){if(!p.classList.contains('on'))return;if(e.key==='Escape')close();
-  if(e.key==='Tab'){var f=p.querySelectorAll('button,a[href]'),a=f[0],z=f[f.length-1];if(e.shiftKey&&d.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&d.activeElement===z){e.preventDefault();a.focus()}}});
- d.querySelectorAll('[data-open-cup]').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();open()})});
+  if(e.key==='Tab'){var f=p.querySelectorAll('button:not([hidden]),a[href],input,select');f=[].filter.call(f,function(x){return x.offsetParent!==null}),a=f[0],z=f[f.length-1];if(e.shiftKey&&d.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&d.activeElement===z){e.preventDefault();a.focus()}}});
+ d.querySelectorAll('[data-open-cup]').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();open(b.hasAttribute('data-reg'))})});
+ p.querySelectorAll('[data-show-reg]').forEach(function(b){b.addEventListener('click',function(){view(true)})});
+ p.querySelectorAll('[data-show-info]').forEach(function(b){b.addEventListener('click',function(){view(false)})});
+ if(location.hash==='#register-cup')setTimeout(function(){open(true)},300);
  var seen=false;try{seen=sessionStorage.getItem(KEY)==='1'}catch(e){}
- if(!seen)setTimeout(open,1800)}
+ if(!seen)setTimeout(function(){open(false)},1800)}
 })();

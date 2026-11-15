@@ -22,7 +22,7 @@ function fmt_dt($iso) {
 }
 function badge($status) {
     $map = array('new' => 'b-pink', 'pending' => 'b-pink', 'read' => 'b-grey', 'verifying' => 'b-gold',
-                 'replied' => 'b-teal', 'completed' => 'b-teal', 'archived' => 'b-grey', 'rejected' => 'b-grey');
+                 'replied' => 'b-teal', 'completed' => 'b-teal', 'confirmed' => 'b-teal', 'waitlisted' => 'b-gold', 'archived' => 'b-grey', 'rejected' => 'b-grey');
     $c = isset($map[$status]) ? $map[$status] : 'b-grey';
     return '<span class="badge ' . $c . '">' . e($status) . '</span>';
 }
@@ -81,6 +81,8 @@ function admin_head($title, $active) {
         'msg' => array('/admin/messages/', 'Messages'),
         'del' => array('/admin/deletions/', 'Deletion requests'),
         'wait' => array('/admin/waitlist/', 'Waitlist'),
+        'tour' => array('/admin/tournament/', 'Tournament sign-ups'),
+        'vis' => array('/admin/visitors/', 'Site visitors'),
         'exp' => array('/admin/explorer/', 'Data Explorer'),
     );
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';

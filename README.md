@@ -86,3 +86,19 @@ Instagram has no web share link, so people share to it from the phone's Share sh
   Jamshedpur, and "reply within 2 working days". Change them if needed.
 * Remaining items for you to decide: age rating line in the privacy policy and FAQ, price/ads line in FAQ and press kit,
   store links (assets/js/main.js, `SITE.playStore` and `SITE.appStore`), official store badges after launch.
+
+
+## What is new in this version (v2)
+1. **Game board fix**: all cells on 3x3, 4x4 and 5x5 are now exactly the same size on every phone (empty rows no longer shrink).
+   Files: `assets/css/game.css`, `assets/js/game.js`.
+2. **Visitor history**: every page view is saved to the `site_visits` table by `assets/js/track.js` (added to all pages).
+   Admin -> **Site visitors** shows total visits, unique visitors, today / 7 days / 30 days, top pages, devices, sources, full history and CSV export.
+3. **Tournament registration form**: the Drotix Cup popup (and the "Register now" button on the Tournament slide) opens a form:
+   full name, player name, email, WhatsApp / phone, city, level, consent. Saved in `tournament_registrations`.
+   Admin -> **Tournament sign-ups**: search, filter, mark New / Confirmed / Waitlisted / Rejected, open WhatsApp, remove, export CSV.
+   A direct link to the form: `https://playdrotix.in/#register-cup`.
+
+**To upgrade an existing install:** (a) run the new block at the bottom of `database/schema.sql` in Supabase SQL Editor;
+(b) add two lines to `tables` in `includes/config.php`: `'visits' => 'site_visits', 'tournament' => 'tournament_registrations',`
+(see `config.sample.php`); (c) upload all files and purge the cache. Privacy policy was updated for the visit counter.
+Note: I could not run PHP here, so test both new forms and both new admin pages once on the live site.

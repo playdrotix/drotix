@@ -41,7 +41,34 @@ if (stripos($ct, 'application/json') !== false) {
     $in = $_POST;
 }
 $type = isset($in['type']) ? clean_str($in['type'], 20) : '';
-if (!in_array($type, array('contact', 'waitlist', 'delete'), true)) { out(400, false, 'Unknown form.'); }
+if (!in_array($type, array('contact', 'waitlist', 'delete', 'tournament', 'visit'), true)) { out(400, false, 'Unknown form.'); }
+
+
+/* ---- site visit (no email, no spam timer; its own, higher rate limit) ---- */
+if ($type === 'visit') {
+    $ip = client_ip();
+    $rlKey = 'visit:' . $ip;
+    if (rl_count($rlKey, 600) >= 60) { out(200, true, 'ok'); }
+    rl_add($rlKey, 600);
+    $vid = preg_replace('/[^A-Za-z0-9_-]/', '', clean_str(isset($in['vid']) ? $in['vid'] : '', 64));
+    if (strlen($vid) < 8) { out(200, true, 'ok'); }
+    $ua = clean_str(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '', 250);
+    if (preg_match('/bot|crawl|spider|slurp|facebookexternalhit|preview|headless/i', $ua)) { out(200, true, 'ok'); }
+    $dev = clean_str(isset($in['device']) ? $in['device'] : '', 12);
+    if (!in_array($dev, array('mobile', 'tablet', 'desktop'), true)) { $dev = ''; }
+    sb_insert(tbl('visits'), array(
+        'visitor_id' => $vid,
+        'session_id' => preg_replace('/[^A-Za-z0-9_-]/', '', clean_str(isset($in['sid']) ? $in['sid'] : '', 64)),
+        'is_new'     => !empty($in['is_new']),
+        'path'       => clean_str(isset($in['path']) ? $in['path'] : '', 200),
+        'referrer'   => clean_str(isset($in['ref']) ? $in['ref'] : '', 250),
+        'device'     => $dev,
+        'language'   => clean_str(isset($in['lang']) ? $in['lang'] : '', 20),
+        'screen'     => clean_str(isset($in['screen']) ? $in['screen'] : '', 20),
+        'ip'         => $ip, 'user_agent' => $ua,
+    ));
+    out(200, true, 'ok');
+}
 
 /* spam traps: hidden field + sent-too-fast. Pretend success so bots learn nothing. */
 if (!empty($in['website'])) { out(200, true, 'Thank you!'); }
@@ -74,6 +101,29 @@ if ($type === 'contact') {
     if (!sb_ok($r)) { error_log('[drotix] contact insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
     send_notice('New contact message: ' . $topic, "From: $name <$email>\nTopic: $topic\n\n$message\n");
     out(200, true, 'Thank you! We got your message and will reply soon.');
+}
+
+
+if ($type === 'tournament') {
+    $name = clean_str(isset($in['name']) ? $in['name'] : '', 80);
+    $phone = preg_replace('/[^0-9+]/', '', clean_str(isset($in['phone']) ? $in['phone'] : '', 20));
+    $username = clean_str(isset($in['username']) ? $in['username'] : '', 40);
+    $city = clean_str(isset($in['city']) ? $in['city'] : '', 80);
+    $exp = clean_str(isset($in['experience']) ? $in['experience'] : '', 20);
+    if (!in_array($exp, array('beginner', 'intermediate', 'pro'), true)) { $exp = 'beginner'; }
+    $consent = isset($in['consent']) ? (string) $in['consent'] : '';
+    if (strlen($name) < 2) { out(422, false, 'Please enter your full name.'); }
+    if (strlen(preg_replace('/\D/', '', $phone)) < 10) { out(422, false, 'Please enter a valid phone / WhatsApp number.'); }
+    if (strlen($username) < 2) { out(422, false, 'Please choose a player name.'); }
+    if ($consent !== 'yes') { out(422, false, 'Please tick the consent box.'); }
+    $r = sb_insert(tbl('tournament'), array(
+        'tournament' => 'Drotix Cup Season 1', 'name' => $name, 'email' => $email, 'phone' => $phone,
+        'username' => $username, 'city' => $city, 'experience' => $exp,
+        'status' => 'new', 'ip' => $ip, 'user_agent' => $ua,
+    ), array('on_conflict' => 'tournament,email'), 'resolution=ignore-duplicates,return=minimal');
+    if (!sb_ok($r)) { error_log('[drotix] tournament insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
+    send_notice('New tournament registration: ' . $username, "Name: $name\nPlayer: $username\nEmail: $email\nPhone: $phone\nCity: $city\nLevel: $exp\n");
+    out(200, true, 'You are registered for Drotix Cup! We will contact you on WhatsApp / email with the match details.');
 }
 
 if ($type === 'waitlist') {

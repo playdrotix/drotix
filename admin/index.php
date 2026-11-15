@@ -8,6 +8,9 @@ $cNew = sb_count(tbl('contact'), array('status' => 'eq.new'));
 $cDel = sb_count(tbl('deletions'), array('status' => $open));
 $cOver = sb_count(tbl('deletions'), array('status' => $open, 'due_at' => 'lt.' . $nowIso));
 $cWait = sb_count(tbl('waitlist'));
+$cTour = sb_count(tbl('tournament'));
+$cVis = sb_count(tbl('visits'));
+$cVisU = sb_count(tbl('visits'), array('is_new' => 'eq.true'));
 list($lastMsg, , $r1) = sb_select(tbl('contact'), array('order' => 'created_at.desc'), 5, 0);
 list($lastDel, , $r2) = sb_select(tbl('deletions'), array('order' => 'created_at.desc'), 5, 0);
 
@@ -23,7 +26,9 @@ echo '<div class="cards">';
 echo '<div class="card' . ($cNew ? ' hot' : '') . '"><div class="n">' . e($n($cNew)) . '</div><div class="l">New messages</div></div>';
 echo '<div class="card' . ($cDel ? ' hot' : '') . '"><div class="n">' . e($n($cDel)) . '</div><div class="l">Open deletion requests</div></div>';
 echo '<div class="card' . ($cOver ? ' hot' : '') . '"><div class="n">' . e($n($cOver)) . '</div><div class="l">Overdue deletions (past ' . (int) cfg('deletion_days', 2) . ' days)</div></div>';
-echo '<div class="card"><div class="n">' . e($n($cWait)) . '</div><div class="l">Waitlist signups</div></div></div>';
+echo '<div class="card"><div class="n">' . e($n($cWait)) . '</div><div class="l">Waitlist signups</div></div>';
+echo '<div class="card"><div class="n">' . e($n($cTour)) . '</div><div class="l"><a href="/admin/tournament/">Tournament registrations</a></div></div>';
+echo '<div class="card"><div class="n">' . e($n($cVis)) . '</div><div class="l"><a href="/admin/visitors/">Site visits</a> (' . e($n($cVisU)) . ' unique)</div></div></div>';
 
 echo '<h2>Latest messages</h2><div class="tbl-wrap"><table><tr><th>When</th><th>From</th><th>Topic</th><th>Status</th></tr>';
 foreach ($lastMsg as $m) {
