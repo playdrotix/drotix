@@ -10,8 +10,8 @@
 return array(
 
     // ---------- Supabase ----------
-    'supabase_url' => 'https://YOUR-PROJECT.supabase.co',     // Project Settings -> API -> Project URL
-    'supabase_key' => 'YOUR-SERVICE-ROLE-KEY',                 // Project Settings -> API -> service_role (secret)
+    'supabase_url' => 'https://hbjaisdfhnehspwscifh.supabase.co',     // Project Settings -> API -> Project URL
+    'supabase_key' => 'sb_publishable_b3tuqFWj0HypYdEp2cgfxA_ZP7TfuWb',                 // Project Settings -> API -> service_role (secret)
 
     // Table names used by the website forms (create them with database/schema.sql)
     'tables' => array(
