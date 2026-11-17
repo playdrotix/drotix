@@ -10,9 +10,9 @@
 return array(
 
     // ---------- Supabase ----------
-    'supabase_url' => 'https://YOUR-PROJECT.supabase.co',     // Project Settings -> API -> Project URL
-    'supabase_key' => 'YOUR-SERVICE-ROLE-KEY',                 // Project Settings -> API -> service_role (secret)
-    'supabase_anon_key' => 'YOUR-ANON-KEY',                    // Project Settings -> API -> anon/public key (for client-side realtime)
+    'supabase_url' => 'https://hbjaisdfhnehspwscifh.supabase.co',     // Project Settings -> API -> Project URL
+    'supabase_key' => 'sb_publishable_b3tuqFWj0HypYdEp2cgfxA_ZP7TfuWb',                 // Project Settings -> API -> service_role (secret)
+    'supabase_anon_key' => 'sb_publishable_b3tuqFWj0HypYdEp2cgfxA_ZP7TfuWb',                    // Project Settings -> API -> anon/public key (for client-side realtime)
 
     // Table names used by the website forms (create them with database/schema.sql and schema_v2.sql)
     'tables' => array(
@@ -65,7 +65,7 @@ return array(
     // ---------- Facebook OAuth ----------
     'facebook' => array(
         'app_id' => '1453266169543653',                         // Your Facebook App ID
-        'app_secret' => 'YOUR_FACEBOOK_APP_SECRET',             // Project Settings -> Facebook Login -> Settings -> App Secret
+        'app_secret' => 'f67f8c70f8ab6177d256984cfa60639e',             // Project Settings -> Facebook Login -> Settings -> App Secret
         'redirect_uri' => 'https://playdrotix.in/auth/facebook/callback/',  // Must match FB App settings
         'scopes' => array('email', 'public_profile'),
         'graph_version' => 'v18.0',
@@ -94,7 +94,7 @@ return array(
     // username => password hash. Create a hash with admin/make-hash (see README) or:
     //   php -r "echo password_hash('YourStrongPassword', PASSWORD_DEFAULT);"
     'admins' => array(
-        'admin' => 'PASTE_PASSWORD_HASH_HERE',
+        'admin' => '$2a$12$3s2ohE0WaoCRrBRtdmpHNOR46Etw8XAtfQf/GXUKL20GR8bBd.aK6',
     ),
     'session_name'         => 'drotix_admin',
     'session_idle_minutes' => 30,
@@ -135,6 +135,6 @@ return array(
     // ---------- Push/Realtime (for future use) ----------
     'realtime' => array(
         'enabled' => true,
-        'supabase_realtime_url' => 'wss://YOUR-PROJECT.supabase.co/realtime/v1',  // Project Settings -> API -> Realtime URL
+        'supabase_realtime_url' => 'wss://hbjaisdfhnehspwscifh.supabase.co/realtime/v1',  // Project Settings -> API -> Realtime URL
     ),
 );
