@@ -22,12 +22,16 @@ function fmt_dt($iso) {
 }
 function badge($status) {
     $map = array('new' => 'b-pink', 'pending' => 'b-pink', 'read' => 'b-grey', 'verifying' => 'b-gold',
-                 'replied' => 'b-teal', 'completed' => 'b-teal', 'confirmed' => 'b-teal', 'waitlisted' => 'b-gold', 'archived' => 'b-grey', 'rejected' => 'b-grey');
+                 'replied' => 'b-teal', 'completed' => 'b-teal', 'confirmed' => 'b-teal', 'waitlisted' => 'b-gold', 'archived' => 'b-grey', 'rejected' => 'b-grey',
+                 'open' => 'b-pink', 'investigating' => 'b-gold', 'resolved' => 'b-teal', 'escalated' => 'b-red',
+                 'registered' => 'b-pink', 'waitlisted' => 'b-gold', 'checked_in' => 'b-teal', 'eliminated' => 'b-grey', 'withdrawn' => 'b-grey', 'disqualified' => 'b-red',
+                 'waiting' => 'b-gold', 'in_progress' => 'b-pink', 'abandoned' => 'b-grey',
+                 'active' => 'b-teal', 'suspended' => 'b-gold', 'banned' => 'b-red');
     $c = isset($map[$status]) ? $map[$status] : 'b-grey';
     return '<span class="badge ' . $c . '">' . e($status) . '</span>';
 }
 function due_label($iso, $status) {
-    if (in_array($status, array('completed', 'rejected'), true)) { return '<span class="muted">-</span>'; }
+    if (in_array($status, array('completed', 'rejected', 'resolved'), true)) { return '<span class="muted">-</span>'; }
     $t = strtotime($iso);
     if (!$t) { return '-'; }
     $diff = $t - time();
@@ -77,14 +81,19 @@ function csv_out($filename, $rows) {
 }
 function admin_head($title, $active) {
     $nav = array(
-        'dash' => array('/admin/', 'Dashboard'),
-        'msg' => array('/admin/messages/', 'Messages'),
-        'del' => array('/admin/deletions/', 'Deletion requests'),
-        'wait' => array('/admin/waitlist/', 'Waitlist'),
-        'tour' => array('/admin/tournament/', 'Tournament sign-ups'),
-        'vis' => array('/admin/visitors/', 'Site visitors'),
-        'exp' => array('/admin/explorer/', 'Data Explorer'),
-        'chk' => array('/admin/health/', 'Setup check'),
+        'dash'      => array('/admin/', 'Dashboard'),
+        'users'     => array('/admin/users/', 'Users'),
+        'tournaments' => array('/admin/tournaments/', 'Tournaments'),
+        'matches'   => array('/admin/matches/', 'Matches'),
+        'rooms'     => array('/admin/rooms/', 'Private Rooms'),
+        'appeals'   => array('/admin/appeals/', 'Suspension Appeals'),
+        'reports'   => array('/admin/reports/', 'User Reports'),
+        'msg'       => array('/admin/messages/', 'Contact Messages'),
+        'del'       => array('/admin/deletions/', 'Deletion Requests'),
+        'wait'      => array('/admin/waitlist/', 'Waitlist'),
+        'vis'       => array('/admin/visitors/', 'Site Visitors'),
+        'exp'       => array('/admin/explorer/', 'Data Explorer'),
+        'chk'       => array('/admin/health/', 'Setup Check'),
     );
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<meta name="robots" content="noindex,nofollow"><title>' . e($title) . ' - Drotix Admin</title>';

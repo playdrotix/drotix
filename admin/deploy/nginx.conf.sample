@@ -1,0 +1,33 @@
+# Sample Nginx site for playdrotix.in (VPS). Change the paths to match your server, then reload Nginx.
+# Apache users do not need this file: the included .htaccess does the same job.
+server {
+    listen 80;
+    server_name playdrotix.in www.playdrotix.in;
+    root /var/www/playdrotix.in;          # the folder where you uploaded the site files
+    index index.html index.php;           # /faq/ opens /faq/index.html, /admin/login/ opens index.php
+    charset utf-8;
+
+    # private folders and files
+    location ~ ^/(includes|database|deploy)/ { return 404; }
+    location ~ /\.(?!well-known) { deny all; }
+    location ~* \.(sql|md|log|bak|sample)$ { deny all; }
+
+    location / { try_files $uri $uri/ =404; }
+    error_page 404 /404.html;
+
+    # CSS and JS: short cache, so new styling is picked up within minutes
+    location ~* \.(css|js)$ {
+        add_header Cache-Control "public, max-age=300, must-revalidate";
+        try_files $uri =404;
+    }
+    location ~* \.(png|jpg|jpeg|svg|ico|webp|woff2)$ {
+        add_header Cache-Control "public, max-age=604800";
+        try_files $uri =404;
+    }
+
+    # PHP (forms /api/submit/ and the /admin/ panel)
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;            # Ubuntu/Debian. On other systems use: include fastcgi_params;
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;   # check your PHP version / socket name
+    }
+}
