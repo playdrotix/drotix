@@ -879,6 +879,50 @@ function app_wallet_adjust_any($uid, $amount, $dir, $note, $ref) {
     return array(true, ($dir === 'credit' ? 'Credited ' : 'Debited ') . number_format($amount) . ' coins. New balance: ' . number_format($new) . '.', false);
 }
 
+/** Readable wallet transaction reason. */
+function app_reason_label($reason) {
+    $m = array('referral_bonus' => 'Referral welcome', 'referral_reward' => 'Referral reward');
+    return isset($m[$reason]) ? $m[$reason] : $reason;
+}
+
+/* ---------- Refer & Earn (read only) ----------
+ * {status, new_player_bonus, referrer_bonus, total_referrals, referrals_today, coins_to_new_players, coins_to_referrers,
+ *  top_referrers: [{user_id, username, player_no, referral_code, account_status, friends}],
+ *  latest: [{user_id, username, joined_at, referrer_id, referrer_username, referral_code}]} */
+function app_referral_overview($limit = 50) {
+    $r = app_rpc('admin_referral_overview', array('p_limit' => (int) $limit));
+    if ($r['ok']) { return $r; }
+    // fallback: profiles.referred_by + wallet history (referral_bonus / referral_reward)
+    $pt = app_profiles_table(); $pc = app_cols($pt); $idc = app_profile_idcol();
+    $refCol = null; foreach (array('referred_by', 'referrer_id', 'referred_by_id', 'invited_by') as $c) { if (isset($pc[$c])) { $refCol = $c; break; } }
+    if (!$refCol) { return $r; }
+    $sel = $idc . ',' . $refCol . (isset($pc['username']) ? ',username' : '') . (isset($pc['player_no']) ? ',player_no' : '') . (isset($pc['referral_code']) ? ',referral_code' : '') . (isset($pc['account_status']) ? ',account_status' : '') . (isset($pc['created_at']) ? ',created_at' : '');
+    $q = array('select' => $sel, $refCol => 'not.is.null'); if (isset($pc['created_at'])) { $q['order'] = 'created_at.desc'; }
+    list($refd, $total, $x) = app_select($pt, $q, 20000, 0, true);
+    if (!$x['ok']) { return $r; }
+    $friends = array(); $today = 0; $mid = strtotime('today');
+    foreach ($refd as $p) { $friends[$p[$refCol]] = (isset($friends[$p[$refCol]]) ? $friends[$p[$refCol]] : 0) + 1; if (strtotime((string) g($p, 'created_at', '')) >= $mid) { $today++; } }
+    arsort($friends);
+    $topIds = array_slice(array_keys($friends), 0, (int) $limit);
+    $latest = array_slice($refd, 0, (int) $limit);
+    $need = $topIds; foreach ($latest as $p) { $need[] = $p[$refCol]; }
+    $prof = array();
+    $need = array_values(array_unique(array_filter($need, 'uuid_ok')));
+    foreach (array_chunk($need, 150) as $ch) { list($ps, , ) = app_select($pt, array($idc => 'in.(' . implode(',', $ch) . ')', 'select' => $sel), 200, 0, false); foreach ($ps as $pp) { $prof[$pp[$idc]] = $pp; } }
+    $top = array(); foreach ($topIds as $u) { $p = isset($prof[$u]) ? $prof[$u] : array(); $top[] = array('user_id' => $u, 'username' => g($p, 'username'), 'player_no' => g($p, 'player_no'), 'referral_code' => g($p, 'referral_code'), 'account_status' => g($p, 'account_status'), 'friends' => $friends[$u]); }
+    $lat = array(); foreach ($latest as $p) { $ref = $p[$refCol]; $rp = isset($prof[$ref]) ? $prof[$ref] : array(); $lat[] = array('user_id' => $p[$idc], 'username' => g($p, 'username'), 'joined_at' => g($p, 'created_at'), 'referrer_id' => $ref, 'referrer_username' => g($rp, 'username'), 'referral_code' => g($rp, 'referral_code')); }
+    $coinsNew = null; $coinsRef = null;
+    $tt = app_tx_table();
+    if ($tt && array_key_exists('reason', app_cols($tt))) {
+        foreach (array('referral_bonus' => 'coinsNew', 'referral_reward' => 'coinsRef') as $reason => $var) {
+            list($rows, , $y) = app_select($tt, array('reason' => 'eq.' . $reason, 'select' => 'amount_minor'), 100000, 0, false);
+            if ($y['ok']) { $sum = 0; foreach ($rows as $w) { $sum += (int) g($w, 'amount_minor', 0); } $$var = $sum; }
+        }
+    }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'new_player_bonus' => 50, 'referrer_bonus' => 100,
+        'total_referrals' => $total !== null ? $total : count($refd), 'referrals_today' => $today, 'coins_to_new_players' => $coinsNew, 'coins_to_referrers' => $coinsRef, 'top_referrers' => $top, 'latest' => $lat));
+}
+
 const APP_UPDATES_BUCKET = 'drotix-app-updates';
 /** One-time signed upload URL (browser uploads the APK straight to Storage; no key in the browser). array(uploadUrl, publicUrl, error) */
 function app_signed_upload($path) {
@@ -1178,6 +1222,7 @@ function app_cell($col, $v, $fmt = '') {
     if ($fmt === 'uuid' && uuid_ok($v) && preg_match('/(user|player|profile|owner|reporter|reported|sender|receiver|winner|friend|referr|target)/', $col)) { return app_user_link($v, substr($v, 0, 8)); }
     if (strpos($fmt, 'timestamp') === 0 || (is_string($v) && preg_match('/_at$/', $col))) { return '<span class="nowrap">' . app_dt($v) . '</span>'; }
     if (in_array($col, array('status', 'account_status', 'direction', 'result'), true)) { return app_badge($v); }
+    if ($col === 'reason' && is_string($v) && ($lbl = app_reason_label($v)) !== $v) { return e($lbl) . ' <span class="muted" style="font-size:11px">' . e($v) . '</span>'; }
     $s = (string) $v;
     if (is_string($v) && preg_match('~^https://\S+\.(png|jpe?g|webp|gif)(\?\S*)?$~i', $s)) { return '<img class="av" src="' . e($s) . '" width="32" height="32" alt="">'; }
     return '<span class="cellv">' . e(strlen($s) > 200 ? substr($s, 0, 200) . '…' : $s) . '</span>';
@@ -1237,7 +1282,7 @@ function app_head($title, $sub) {
         array('Whole app', 'Applies to all players', array(
             'online' => array('/admin/app/online/', 'Online now'), 'cast' => array('/admin/app/broadcast/', 'Broadcast'),
             'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),
-            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'banners' => array('/admin/app/banners/', 'Home banners'), 'packs' => array('/admin/app/packs/', 'Coin packs'), 'purch' => array('/admin/app/purchases/', 'Purchases'))),
+            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'banners' => array('/admin/app/banners/', 'Home banners'), 'packs' => array('/admin/app/packs/', 'Coin packs'), 'purch' => array('/admin/app/purchases/', 'Purchases'), 'refer' => array('/admin/app/referrals/', 'Refer & Earn'))),
         array('Data', 'Reports & raw data', array(
             'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'), 'audit' => array('/admin/app/audit/', 'Audit log'), 'check' => array('/admin/app/check/', 'Admin check'))),
     );
@@ -1246,6 +1291,7 @@ function app_head($title, $sub) {
                     'rel' => 'One update for the whole app: every player on an older version sees the update screen.',
                     'tour' => 'Tournaments are open to all players.', 'banners' => 'Home banners are shown on the Home screen of every player of the app.',
                     'packs' => 'Coin packs are shown in the Shop of every player of the app.',
+                    'refer' => 'Refer & Earn works for every player: a new player who enters a friend\'s code gets +50, the friend gets +100.',
                     'purch' => 'Google Play coin purchases of every player (verified on the server by verify-play-purchase).', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
     echo '<link rel="stylesheet" href="/admin/assets/app.css?v=7"><script src="/admin/assets/app.js?v=5" defer></script>';
     echo '<div class="apptop"><div class="navgroups">';

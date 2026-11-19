@@ -11,6 +11,8 @@ $cards = array();
 $cards[] = array(app_count($pt), 'Players', '/admin/app/users/');
 $on = app_online(100);
 $pp = app_list_iap_purchases(null, 500, 0);
+$rf = app_referral_overview(1);
+if ($rf['ok']) { $cards[] = array(g($rf['data'], 'referrals_today', 0), 'Referrals today', '/admin/app/referrals/'); }
 $tk = app_list_tickets('active', '', '', 1, 0);
 if ($tk['ok']) { $tc = (array) g($tk['data'], 'counts', array()); $cards[] = array((int) g($tc, 'open', 0) + (int) g($tc, 'in_progress', 0) + (int) g($tc, 'waiting_user', 0), 'Support: open tickets (' . (int) g($tc, 'unread', 0) . ' unread)', '/admin/app/tickets/'); }
 if ($pp['ok']) {
