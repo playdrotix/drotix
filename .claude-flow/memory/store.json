@@ -575,6 +575,60 @@
       "lastAccessed": "2026-11-19T16:42:12.028Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T16:42:12.028Z"
+    },
+    "cmd-1795113457660": {
+      "key": "cmd-1795113457660",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"$S/patch_api12.py\\\" includes/app_admin_api.php && python \\\"$S/phpcheck.py\\\" includes/app_admin_api.php && grep -n \\\"elseif (\\\\$act === 'wallet')\\\" -A40 admin/app/users/index.php | head -50; grep -n \\\"Adjust coins\\\" admin/app/users/index.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T18:37:37.660Z",
+      "lastAccessed": "2026-11-19T18:37:37.660Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T18:37:37.660Z"
+    },
+    "cmd-1795113463219": {
+      "key": "cmd-1795113463219",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && sed -n 253,256p admin/app/users/index.php; grep -n \\\"\\\\$tabs = array('profile'\\\" admin/app/users/index.php; grep -n \\\"^elseif (\\\\$tab === 'wallet')\\\" admin/app/users/index.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T18:37:43.219Z",
+      "lastAccessed": "2026-11-19T18:37:43.219Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T18:37:43.219Z"
+    },
+    "cmd-1795113499791": {
+      "key": "cmd-1795113499791",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"$S/patch_users12.py\\\" admin/app/users/index.php && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T18:38:19.791Z",
+      "lastAccessed": "2026-11-19T18:38:19.791Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T18:38:19.791Z"
+    },
+    "cmd-1795113569644": {
+      "key": "cmd-1795113569644",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cp \\\"$S/stage12/purchases/index.php\\\" admin/app/purchases/index.php 2>/dev/null || (mkdir -p admin/app/purchases && cp \\\"$S/stage12/purchases/index.php\\\" admin/app/purchases/); cp \\\"$S/stage12/releases/index.php\\\" admin/app/releases/index.php && cp \\\"$S/stage12/app-release.js\\\" admin/assets/app-release.js && cat > \\\"$S/patch_pd.py\\\" <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T18:39:29.644Z",
+      "lastAccessed": "2026-11-19T18:39:29.644Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T18:39:29.644Z"
+    },
+    "cmd-1795113671674": {
+      "key": "cmd-1795113671674",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"$S/patch_api13.py\\\" includes/app_admin_api.php && python \\\"$S/phpcheck.py\\\" includes/app_admin_api.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T18:41:11.674Z",
+      "lastAccessed": "2026-11-19T18:41:11.674Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T18:41:11.674Z"
+    },
+    "cmd-1795113764871": {
+      "key": "cmd-1795113764871",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && mkdir -p admin/app/tickets && cp \\\"$S/stage13/tickets/index.php\\\" admin/app/tickets/ && cp \\\"$S/stage13/app-tickets.js\\\" admin/assets/ && cat > \\\"$S/patch_dash13.py\\\" <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T18:42:44.871Z",
+      "lastAccessed": "2026-11-19T18:42:44.871Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T18:42:44.871Z"
     }
   },
   "version": "3.0.0"

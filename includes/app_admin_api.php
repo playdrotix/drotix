@@ -500,7 +500,9 @@ function app_purchase_source() {
     if ($src !== false) { return $src; }
     $src = null;
     $moneyCols = array('amount_paid_minor', 'price_minor', 'price_paise', 'amount_minor', 'paid_minor', 'revenue_minor', 'price_amount_micros', 'price_micros', 'amount_micros', 'amount_paid', 'price', 'amount', 'amount_inr', 'paid_amount', 'price_inr');
-    foreach (app_tables() as $t => $i) {
+    $tabs = app_tables();
+    if (isset($tabs['iap_purchases'])) { $tabs = array('iap_purchases' => $tabs['iap_purchases']) + $tabs; }
+    foreach ($tabs as $t => $i) {
         if (!preg_match('/(purchase|iap|order|payment|billing)/', $t)) { continue; }
         $uc = app_owner_col($t); if (!$uc) { continue; }
         $money = null; foreach ($moneyCols as $c) { if (isset($i['cols'][$c])) { $money = $c; break; } }
@@ -523,7 +525,7 @@ function app_money_value($col, $v) {
 }
 function app_purchase_ok($row, $src) {
     if (!$src || !$src['status']) { return true; }
-    return !preg_match('/(refund|fail|cancel|pending|revok|void|chargeback)/i', (string) g($row, $src['status'], ''));
+    return !preg_match('/(refund|fail|cancel|pending|revok|void|chargeback|reject)/i', (string) g($row, $src['status'], ''));
 }
 /**
  * Purchases of many players: array('source' => src|null, 'by' => array(user_id => array(count, money, coins, currency, last_at)),
@@ -684,6 +686,197 @@ function app_signed_upload_to($bucket, $path, $upsert = false) {
     $u = (string) gx($r['data'], array('url', 'signedURL'), '');
     if (!$r['ok'] || $u === '') { return array('', '', $r['error'] !== '' ? $r['error'] : 'Could not create the upload link (does the bucket ' . $bucket . ' exist?)'); }
     return array($base . '/storage/v1' . (strpos($u, '/') === 0 ? '' : '/') . $u, $base . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $enc, '');
+}
+
+/* ---------- Google Play purchases (read only: verify-play-purchase writes them) ----------
+ * Purchase = {id, user_id, username, platform, product_id, order_id, coins, price_inr, status 'credited'|'rejected'|'refunded', verified, created_at} */
+/** {status, total, items: [Purchase]} — newest first. $userId null = every player. */
+function app_list_iap_purchases($userId = null, $limit = 100, $offset = 0) {
+    $r = app_rpc('admin_list_iap_purchases', array('p_user_id' => $userId, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset));
+    if ($r['ok']) { $r['data']['items'] = (array) g($r['data'], 'items', array()); return $r; }
+    $t = app_has_table('iap_purchases') ? 'iap_purchases' : null;
+    $src = app_purchase_source();
+    if (!$t && $src) { $t = $src['table']; }
+    if (!$t) { return $r; }
+    $c = app_cols($t); $uc = app_owner_col($t);
+    $q = array('order' => (isset($c['created_at']) ? 'created_at' : 'id') . '.desc');
+    if ($userId && $uc) { $q[$uc] = 'eq.' . $userId; }
+    list($rows, $total, $x) = app_select($t, $q, (int) $limit, (int) $offset, true);
+    if (!$x['ok']) { return $r; }
+    $ids = array(); foreach ($rows as $w) { if ($uc && !empty($w[$uc])) { $ids[] = $w[$uc]; } }
+    $names = array();
+    if ($ids) { $pt = app_profiles_table(); $idc = app_profile_idcol(); list($ps, , ) = app_select($pt, array($idc => 'in.(' . implode(',', array_unique($ids)) . ')', 'select' => $idc . ',username'), 600, 0, false); foreach ($ps as $pp) { $names[$pp[$idc]] = g($pp, 'username'); } }
+    $items = array();
+    foreach ($rows as $w) {
+        $u = $uc ? g($w, $uc) : null;
+        $items[] = array('id' => g($w, 'id'), 'user_id' => $u, 'username' => $u && isset($names[$u]) ? $names[$u] : null, 'platform' => g($w, 'platform', 'android'),
+            'product_id' => gx($w, array('product_id', 'sku')), 'order_id' => gx($w, array('order_id', 'google_order_id', 'transaction_id')), 'coins' => gx($w, array('coins', 'coins_granted', 'total_coins')),
+            'price_inr' => gx($w, array('price_inr', 'amount_inr')), 'status' => g($w, 'status', 'credited'), 'verified' => (bool) gx($w, array('verified', 'is_verified'), false), 'created_at' => gx($w, array('created_at', 'purchased_at')));
+    }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'total' => $total !== null ? $total : count($items), 'items' => $items));
+}
+/** Credited / rejected / coins / rupees of a list of purchases. */
+function app_purchase_summary($items) {
+    $s = array('credited' => 0, 'rejected' => 0, 'refunded' => 0, 'coins' => 0, 'inr' => 0.0);
+    foreach ($items as $i) {
+        $st = (string) g($i, 'status', '');
+        if (isset($s[$st])) { $s[$st]++; }
+        if ($st === 'credited') { $s['coins'] += (int) g($i, 'coins', 0); $s['inr'] += (float) g($i, 'price_inr', 0); }
+    }
+    return $s;
+}
+function app_purchase_badge($st) {
+    $c = array('credited' => 'b-green', 'rejected' => 'b-red', 'refunded' => 'b-orange');
+    return '<span class="badge ' . (isset($c[$st]) ? $c[$st] : 'b-grey') . '">' . e(ucfirst((string) $st ?: '-')) . '</span>';
+}
+
+/* ---------- support tickets ----------
+ * Ticket = {id, ticket_no, ref "T-00012", user_id, category, subject, status, priority 'normal'|'high', order_id, created_at, updated_at,
+ *           last_message_at, user_unread, admin_unread, closed_at} (+ username, player_no, avatar_url, last_message in lists) */
+const APP_SUPPORT_BUCKET = 'drotix-support';
+function app_ticket_table() { return app_has_table('support_tickets') ? 'support_tickets' : app_find_table(array('subject', 'category'), '/ticket|support/'); }
+function app_ticket_msg_table() { return app_has_table('support_messages') ? 'support_messages' : app_find_table(array('ticket_id', 'body'), '/ticket|support/'); }
+function app_ticket_ref($t) { $r = g($t, 'ref'); if ($r) { return (string) $r; } $n = g($t, 'ticket_no'); return $n !== null ? 'T-' . str_pad((string) (int) $n, 5, '0', STR_PAD_LEFT) : app_ref('T', g($t, 'id')); }
+function app_ticket_count_unread($t) { $u = g($t, 'admin_unread'); return is_bool($u) ? ($u ? 1 : 0) : (int) $u; }
+/** Add username / player_no / avatar_url to ticket rows (direct path). */
+function app_ticket_people($rows) {
+    $ids = array(); foreach ($rows as $t) { if (!empty($t['user_id'])) { $ids[] = $t['user_id']; } }
+    if (!$ids) { return $rows; }
+    $pt = app_profiles_table(); $idc = app_profile_idcol(); $pr = array();
+    list($ps, , ) = app_select($pt, array($idc => 'in.(' . implode(',', array_unique($ids)) . ')'), 500, 0, false);
+    foreach ($ps as $pp) { $pr[$pp[$idc]] = $pp; }
+    foreach ($rows as &$t) { $p = isset($pr[g($t, 'user_id')]) ? $pr[$t['user_id']] : array(); foreach (array('username', 'player_no', 'avatar_url') as $k) { if (!isset($t[$k])) { $t[$k] = g($p, $k); } } }
+    unset($t);
+    return $rows;
+}
+/** {status, counts{open,in_progress,waiting_user,resolved,closed,unread}, items[]}. $status: null all | 'active' | one status. */
+function app_list_tickets($status, $category, $search, $limit = 50, $offset = 0) {
+    $r = app_rpc('admin_list_tickets', array('p_status' => $status ?: null, 'p_category' => $category ?: null, 'p_search' => $search !== '' ? $search : null, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset));
+    if ($r['ok']) { return $r; }
+    $t = app_ticket_table(); if (!$t) { return $r; }
+    list($all, , $x) = app_select($t, array('order' => 'updated_at.desc'), 5000, 0, false);
+    if (!$x['ok']) { list($all, , $x) = app_select($t, array(), 5000, 0, false); }
+    if (!$x['ok']) { return $r; }
+    $counts = array('open' => 0, 'in_progress' => 0, 'waiting_user' => 0, 'resolved' => 0, 'closed' => 0, 'unread' => 0);
+    foreach ($all as $row) { $st = (string) g($row, 'status', 'open'); if (isset($counts[$st])) { $counts[$st]++; } if (app_ticket_count_unread($row) && !in_array($st, array('resolved', 'closed'), true)) { $counts['unread']++; } }
+    $all = app_ticket_people($all);
+    $needle = strtolower(trim((string) $search)); $digits = preg_replace('/\D/', '', $needle);
+    $rows = array_values(array_filter($all, function ($row) use ($status, $category, $needle, $digits) {
+        $st = (string) g($row, 'status', 'open');
+        if ($status === 'active' && !in_array($st, array('open', 'in_progress', 'waiting_user'), true)) { return false; }
+        if ($status && $status !== 'active' && $st !== $status) { return false; }
+        if ($category && g($row, 'category') !== $category) { return false; }
+        if ($needle === '') { return true; }
+        if ($digits !== '' && (int) $digits === (int) g($row, 'ticket_no', -1)) { return true; }
+        foreach (array('username', 'order_id', 'subject') as $k) { if (strpos(strtolower((string) g($row, $k, '')), $needle) !== false) { return true; } }
+        return false;
+    }));
+    usort($rows, function ($a, $b) {
+        $u = app_ticket_count_unread($b) - app_ticket_count_unread($a); if ($u) { return $u; }
+        $h = (g($b, 'priority') === 'high') - (g($a, 'priority') === 'high'); if ($h) { return $h; }
+        return strcmp((string) gx($b, array('last_message_at', 'updated_at', 'created_at'), ''), (string) gx($a, array('last_message_at', 'updated_at', 'created_at'), ''));
+    });
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'counts' => $counts, 'items' => array_slice($rows, (int) $offset, (int) $limit)));
+}
+/** {status, ticket, messages[], user{}, purchases[]}. Opening marks the player's messages as read. */
+function app_get_ticket($id) {
+    $r = app_rpc('admin_get_ticket', array('p_ticket_id' => $id));
+    if ($r['ok']) { return $r; }
+    $t = app_ticket_table(); $m = app_ticket_msg_table(); if (!$t) { return $r; }
+    list($rows, , $x) = app_select($t, array('id' => 'eq.' . $id), 1, 0, false);
+    if (!$x['ok'] || !$rows) { return $x['ok'] ? array('ok' => false, 'error' => 'Ticket not found.', 'data' => null) : $r; }
+    $ticket = $rows[0];
+    $msgs = array();
+    if ($m) { list($msgs, , ) = app_select($m, array('ticket_id' => 'eq.' . $id, 'order' => 'created_at.asc'), 1000, 0, false); }
+    $uid = (string) g($ticket, 'user_id', ''); $user = array('id' => $uid);
+    if (uuid_ok($uid)) {
+        $pt = app_profiles_table(); $idc = app_profile_idcol();
+        list($ps, , ) = app_select($pt, array($idc => 'eq.' . $uid), 1, 0, false);
+        if ($ps) { foreach (array('username', 'player_no', 'avatar_url', 'account_status') as $k) { $user[$k] = g($ps[0], $k); } }
+        $wt = app_wallet_table(); $oc = $wt ? app_owner_col($wt) : null;
+        if ($oc) { list($ws, , ) = app_select($wt, array($oc => 'eq.' . $uid), 1, 0, false); $user['balance'] = $ws ? g($ws[0], 'balance_minor') : null; }
+    }
+    $pp = uuid_ok($uid) ? app_list_iap_purchases($uid, 50, 0) : array('ok' => false);
+    if (array_key_exists('admin_unread', app_cols($t)) && app_ticket_count_unread($ticket)) {
+        app_db('PATCH', $t, array('id' => 'eq.' . $id), array('admin_unread' => is_bool($ticket['admin_unread']) ? false : 0), 'return=minimal');
+    }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'ticket' => $ticket, 'messages' => $msgs, 'user' => $user, 'purchases' => $pp['ok'] ? (array) g($pp['data'], 'items', array()) : array()));
+}
+/** Reply + status in one step; the player gets a push + in-app notification. */
+function app_reply_ticket($id, $message, $status = 'waiting_user') {
+    $r = app_rpc('admin_reply_ticket', array('p_ticket_id' => $id, 'p_message' => $message, 'p_status' => $status));
+    if ($r['ok']) { return $r; }
+    $t = app_ticket_table(); $m = app_ticket_msg_table(); if (!$t || !$m) { return $r; }
+    list($rows, , ) = app_select($t, array('id' => 'eq.' . $id), 1, 0, false);
+    if (!$rows) { return array('ok' => false, 'error' => 'Ticket not found.', 'data' => null); }
+    $x = app_db('POST', $m, array(), app_fill_required($m, array('ticket_id' => $id, 'sender' => 'admin', 'body' => $message)), 'return=minimal');
+    if (!$x['ok']) { $x['error'] = 'Reply failed: ' . $x['error']; return $x; }
+    $c = app_cols($t); $patch = array();
+    foreach (array('status' => $status, 'updated_at' => date('c'), 'last_message_at' => date('c'), 'closed_at' => $status === 'closed' ? date('c') : null) as $k => $v) { if (isset($c[$k])) { $patch[$k] = $v; } }
+    if (isset($c['user_unread'])) { $patch['user_unread'] = is_bool(g($rows[0], 'user_unread')) ? true : ((int) g($rows[0], 'user_unread', 0)) + 1; }
+    app_db('PATCH', $t, array('id' => 'eq.' . $id), $patch, 'return=minimal');
+    app_notify($rows[0]['user_id'], 'Support ' . app_ticket_ref($rows[0]) . ': new reply', mb_substr($message, 0, 140));
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok'));
+}
+/** Status / priority change. resolved / closed / in_progress add a system line + notify the player. */
+function app_set_ticket_status($id, $status, $priority = null) {
+    $r = app_rpc('admin_set_ticket_status', array('p_ticket_id' => $id, 'p_status' => $status, 'p_priority' => $priority));
+    if ($r['ok']) { return $r; }
+    $t = app_ticket_table(); if (!$t) { return $r; }
+    list($rows, , ) = app_select($t, array('id' => 'eq.' . $id), 1, 0, false);
+    if (!$rows) { return array('ok' => false, 'error' => 'Ticket not found.', 'data' => null); }
+    $c = app_cols($t); $patch = array();
+    foreach (array('status' => $status, 'priority' => $priority, 'updated_at' => date('c'), 'closed_at' => $status === 'closed' ? date('c') : null) as $k => $v) { if (isset($c[$k]) && !($k === 'priority' && $v === null)) { $patch[$k] = $v; } }
+    $x = app_db('PATCH', $t, array('id' => 'eq.' . $id), $patch, 'return=minimal');
+    if (!$x['ok']) { return $x; }
+    if ($status !== (string) g($rows[0], 'status') && in_array($status, array('resolved', 'closed', 'in_progress'), true)) {
+        $line = array('resolved' => 'Ticket marked as resolved.', 'closed' => 'Ticket closed.', 'in_progress' => 'Our team is working on it.')[$status];
+        $m = app_ticket_msg_table(); if ($m) { app_db('POST', $m, array(), app_fill_required($m, array('ticket_id' => $id, 'sender' => 'system', 'body' => $line)), 'return=minimal'); }
+        app_notify($rows[0]['user_id'], 'Support ' . app_ticket_ref($rows[0]), $line);
+    }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok'));
+}
+/** Signed URL for a private file (support screenshots: 600 s). '' on error. */
+function app_signed_url($bucket, $path, $seconds = 600) {
+    $path = ltrim((string) $path, '/');
+    if ($path === '' || strpos($path, '..') !== false) { return ''; }
+    if (strpos($path, $bucket . '/') === 0) { $path = substr($path, strlen($bucket) + 1); }
+    $enc = implode('/', array_map('rawurlencode', explode('/', $path)));
+    $r = app_http('POST', '/storage/v1/object/sign/' . rawurlencode($bucket) . '/' . $enc, array('expiresIn' => (int) $seconds));
+    if (!$r['ok'] || empty($r['data']['signedURL'])) { return ''; }
+    list($base, ) = app_base();
+    return $base . '/storage/v1' . (strpos($r['data']['signedURL'], '/') === 0 ? '' : '/') . $r['data']['signedURL'];
+}
+/**
+ * Credit / debit a player (same as the user page "Adjust coins"): game function first, else direct with a
+ * duplicate check on the reference. Returns array(ok, message, duplicate).
+ */
+function app_wallet_adjust_any($uid, $amount, $dir, $note, $ref) {
+    if (app_has_rpc('admin_wallet_adjust')) {
+        $r = app_rpc('admin_wallet_adjust', array('p_user_id' => $uid, 'p_amount' => (int) $amount, 'p_direction' => $dir, 'p_note' => $note, 'p_reference' => $ref !== '' ? $ref : null));
+        if ($r['ok'] && !empty($r['data']['duplicate'])) { return array(false, 'Duplicate: reference ' . $ref . ' was already credited earlier. Nothing changed.', true); }
+        if ($r['ok']) { app_log('wallet_' . $dir, $uid, array('amount' => $amount, 'note' => $note, 'reference' => $ref)); return array(true, ($dir === 'credit' ? 'Credited ' : 'Debited ') . number_format($amount) . ' coins. New balance: ' . app_num(g($r['data'], 'balance_minor')) . '.', false); }
+    }
+    $WT = app_wallet_table(); $TT = app_tx_table(); $oc = $WT ? app_owner_col($WT) : null;
+    if (!$WT || !$oc) { return array(false, 'No wallet table found.', false); }
+    if ($ref !== '' && $TT) {
+        $tc = app_cols($TT); $ors = array();
+        if (isset($tc['ref_id'])) { $ors[] = 'ref_id.eq.' . pg_safe($ref); }
+        if (isset($tc['idempotency_key'])) { $ors[] = 'idempotency_key.eq.admin:' . pg_safe($ref); }
+        if ($ors && app_count($TT, array('or' => '(' . implode(',', $ors) . ')'))) { return array(false, 'Duplicate: reference ' . $ref . ' was already credited earlier. Nothing changed.', true); }
+    }
+    list($ws, , ) = app_select($WT, array($oc => 'eq.' . $uid), 1, 0, false); $w = $ws ? $ws[0] : null;
+    $bal = (int) g($w, 'balance_minor', 0); $new = $dir === 'credit' ? $bal + $amount : $bal - $amount;
+    if ($new < 0) { return array(false, 'Not enough coins (balance ' . number_format($bal) . ').', false); }
+    $x = $w ? app_db('PATCH', $WT, array($oc => 'eq.' . $uid), array('balance_minor' => $new), 'return=minimal') : app_db('POST', $WT, array(), array($oc => $uid, 'balance_minor' => $new), 'return=minimal');
+    if (!$x['ok']) { return array(false, 'Wallet update failed: ' . $x['error'], false); }
+    if ($TT && ($toc = app_owner_col($TT))) {
+        $tc = app_cols($TT); $tx = array($toc => $uid, 'amount_minor' => (int) $amount, 'direction' => $dir);
+        foreach (array('reason' => 'admin_' . $dir, 'balance_after' => $new, 'ref_type' => 'admin', 'ref_id' => $ref !== '' ? $ref : null, 'note' => $note, 'idempotency_key' => 'admin:' . ($ref !== '' ? $ref : bin2hex(random_bytes(8)))) as $k => $v) { if (isset($tc[$k])) { $tx[$k] = $v; } }
+        app_db('POST', $TT, array(), $tx, 'return=minimal');
+    }
+    app_log('wallet_' . $dir, $uid, array('amount' => $amount, 'note' => $note, 'reference' => $ref));
+    return array(true, ($dir === 'credit' ? 'Credited ' : 'Debited ') . number_format($amount) . ' coins. New balance: ' . number_format($new) . '.', false);
 }
 
 const APP_UPDATES_BUCKET = 'drotix-app-updates';
@@ -926,7 +1119,7 @@ function app_action_label($a) {
                'publish_legal' => 'Published legal document', 'publish_app_release' => 'Published app release',
                'create_coupon' => 'Created coupon', 'edit_coupon' => 'Edited coupon', 'enable_coupon' => 'Enabled coupon', 'disable_coupon' => 'Disabled coupon',
                'create_banner' => 'Created home banner', 'edit_banner' => 'Edited home banner', 'delete_banner' => 'Deleted home banner',
-               'create_coin_pack' => 'Created coin pack', 'edit_coin_pack' => 'Edited coin pack', 'enable_coin_pack' => 'Enabled coin pack', 'disable_coin_pack' => 'Disabled coin pack');
+               'reply_ticket' => 'Replied to support ticket', 'ticket_status' => 'Changed ticket status', 'create_coin_pack' => 'Created coin pack', 'edit_coin_pack' => 'Edited coin pack', 'enable_coin_pack' => 'Enabled coin pack', 'disable_coin_pack' => 'Disabled coin pack');
     return isset($m[$a]) ? $m[$a] : ucfirst(str_replace('_', ' ', $a));
 }
 /** Error text for a failed game function, with the fix when no app admin exists. */
@@ -1040,11 +1233,11 @@ function app_head($title, $sub) {
     $groups = array(
         array('Players', 'One player at a time', array(
             'users' => array('/admin/app/users/', 'Players'), 'reports' => array('/admin/app/reports/', 'Reports'),
-            'appeals' => array('/admin/app/appeals/', 'Appeals'))),
+            'appeals' => array('/admin/app/appeals/', 'Appeals'), 'tickets' => array('/admin/app/tickets/', 'Support tickets'))),
         array('Whole app', 'Applies to all players', array(
             'online' => array('/admin/app/online/', 'Online now'), 'cast' => array('/admin/app/broadcast/', 'Broadcast'),
             'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),
-            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'banners' => array('/admin/app/banners/', 'Home banners'), 'packs' => array('/admin/app/packs/', 'Coin packs'))),
+            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'banners' => array('/admin/app/banners/', 'Home banners'), 'packs' => array('/admin/app/packs/', 'Coin packs'), 'purch' => array('/admin/app/purchases/', 'Purchases'))),
         array('Data', 'Reports & raw data', array(
             'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'), 'audit' => array('/admin/app/audit/', 'Audit log'), 'check' => array('/admin/app/check/', 'Admin check'))),
     );
@@ -1052,8 +1245,9 @@ function app_head($title, $sub) {
                     'legal' => 'One Privacy Policy and one Terms of Service for the whole app: a new version is shown to every player in the app.',
                     'rel' => 'One update for the whole app: every player on an older version sees the update screen.',
                     'tour' => 'Tournaments are open to all players.', 'banners' => 'Home banners are shown on the Home screen of every player of the app.',
-                    'packs' => 'Coin packs are shown in the Shop of every player of the app.', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
-    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=6"><script src="/admin/assets/app.js?v=5" defer></script>';
+                    'packs' => 'Coin packs are shown in the Shop of every player of the app.',
+                    'purch' => 'Google Play coin purchases of every player (verified on the server by verify-play-purchase).', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
+    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=7"><script src="/admin/assets/app.js?v=5" defer></script>';
     echo '<div class="apptop"><div class="navgroups">';
     foreach ($groups as $gr) {
         echo '<div class="navgroup"><div class="ngh">' . e($gr[0]) . ' <span>' . e($gr[1]) . '</span></div><nav class="subnav">';

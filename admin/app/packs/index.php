@@ -64,7 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 app_head('Coin packs', 'packs');
-echo '<div class="warn"><b>Payments are not live yet.</b> The app shows these packs with "Purchases coming soon". Prices are display prices until Google Play Billing is connected.</div>';
+echo '<div class="warn">Each product id must exist in <b>Play Console &rarr; Monetize &rarr; In-app products</b> with the same price. Coins are added only after Google confirms the purchase.</div>';
+$sold = array(); $pp = app_list_iap_purchases(null, 2000, 0);
+foreach ((array) g($pp['data'], 'items', array()) as $x) { if (g($x, 'status') === 'credited') { $pid = (string) g($x, 'product_id', ''); $sold[$pid] = (isset($sold[$pid]) ? $sold[$pid] : 0) + 1; } }
 if (!$lr['ok']) { echo '<div class="flash err">Could not load coin packs: ' . e(app_rpc_error($lr)) . '</div>'; }
 
 /* ---------- form ---------- */
@@ -88,7 +90,7 @@ echo '<div class="row" style="margin:0"><button class="btn" type="submit">' . ($
 echo '<div><div class="muted" style="margin-bottom:8px">Preview (as in the Shop)</div><div class="shop" id="pkPreview">' . pack_row_html($f) . '</div></div></div></details>';
 
 /* ---------- table ---------- */
-echo '<h2>Coin packs (' . count($items) . ')</h2><div class="tbl-wrap"><table><tr><th>Order</th><th>Title</th><th>Product id</th><th>Coins</th><th>Total</th><th>Price</th><th>Coins per ₹1</th><th>Badge</th><th>On/Off</th><th></th></tr>';
+echo '<h2>Coin packs (' . count($items) . ')</h2><div class="tbl-wrap"><table><tr><th>Order</th><th>Title</th><th>Product id</th><th>Coins</th><th>Total</th><th>Price</th><th>Coins per ₹1</th><th>Badge</th><th>Sold</th><th>On/Off</th><th></th></tr>';
 $n = count($items);
 foreach (array_values($items) as $i => $k) {
     $id = (string) g($k, 'id', ''); $on = (bool) g($k, 'active'); $h = csrf_field() . '<input type="hidden" name="id" value="' . e($id) . '">';
@@ -98,11 +100,11 @@ foreach (array_values($items) as $i => $k) {
     if ($i < $n - 1) { echo '<form method="post" style="display:inline">' . $h . '<input type="hidden" name="action" value="move"><input type="hidden" name="dir" value="down"><button class="btn ghost sm" type="submit" title="Move down">&darr;</button></form>'; }
     echo '</td><td><b>' . e(g($k, 'title', '')) . '</b></td><td><code class="j">' . e(g($k, 'product_id', '')) . '</code></td>';
     echo '<td class="nowrap">' . app_num(g($k, 'coins')) . ((int) g($k, 'bonus_coins', 0) ? ' <span class="pos">+' . app_num($k['bonus_coins']) . '</span>' : '') . '</td><td><b>' . app_num($total) . '</b></td><td class="nowrap"><b>' . e(app_inr($price)) . '</b></td>';
-    echo '<td>' . ($price > 0 ? app_num(round($total / $price, 1)) : '-') . '</td><td>' . (g($k, 'badge') ? '<span class="badge b-gold">' . e($k['badge']) . '</span>' : '<span class="muted">-</span>') . '</td>';
+    echo '<td>' . ($price > 0 ? app_num(round($total / $price, 1)) : '-') . '</td><td>' . (g($k, 'badge') ? '<span class="badge b-gold">' . e($k['badge']) . '</span>' : '<span class="muted">-</span>') . '</td><td class="nowrap">Sold: <b>' . app_num(isset($sold[(string) g($k, 'product_id')]) ? $sold[(string) g($k, 'product_id')] : 0) . '</b></td>';
     echo '<td><form method="post" data-confirm="' . ($on ? 'Hide this pack from every player\'s Shop?' : 'Show this pack in every player\'s Shop?') . '">' . $h . '<input type="hidden" name="action" value="toggle"><button type="submit" class="switch' . ($on ? ' on' : '') . '"><i></i></button></form></td>';
     echo '<td><a class="btn ghost sm" href="/admin/app/packs/?edit=' . e(rawurlencode($id)) . '#packForm">Edit</a></td></tr>';
 }
-if (!$items) { echo '<tr><td colspan="10" class="muted">' . ($lr['ok'] ? 'No coin packs yet. Create the first one above.' : 'Could not load.') . '</td></tr>'; }
+if (!$items) { echo '<tr><td colspan="11" class="muted">' . ($lr['ok'] ? 'No coin packs yet. Create the first one above.' : 'Could not load.') . '</td></tr>'; }
 echo '</table></div>';
 
 /* ---------- shop as players see it ---------- */
@@ -110,6 +112,6 @@ $act = array_values(array_filter($items, function ($k) { return g($k, 'active');
 echo '<h2>Shop as players see it (' . count($act) . ' active)</h2><div class="shop" style="max-width:460px">';
 foreach ($act as $k) { echo pack_row_html($k); }
 if (!$act) { echo '<p class="muted" style="padding:16px">No active pack: the Shop is empty.</p>'; }
-echo '<div class="muted" style="text-align:center;padding:8px;font-size:12px">Purchases coming soon</div></div>';
+echo '</div>';
 echo '<script src="/admin/assets/app-packs.js?v=1" defer></script>';
 admin_foot();

@@ -11,7 +11,7 @@ $WT = app_wallet_table();
 $TT = app_tx_table();
 
 $id = isset($_GET['id']) ? (string) $_GET['id'] : '';
-$tabs = array('profile' => 'Profile & account', 'safety' => 'Safety', 'wallet' => 'Wallet', 'data' => 'All data');
+$tabs = array('profile' => 'Profile & account', 'safety' => 'Safety', 'wallet' => 'Wallet', 'purchases' => 'Purchases', 'data' => 'All data');
 $tab = isset($_GET['tab'], $tabs[$_GET['tab']]) ? (string) $_GET['tab'] : 'profile';
 
 /** Load the profile row of a player. */
@@ -79,7 +79,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $done = false; $msg = '';
         if (app_has_rpc('admin_wallet_adjust')) {   // preferred: the game's own function (keeps the ledger + notification)
             $r = app_rpc('admin_wallet_adjust', array('p_user_id' => $uid, 'p_amount' => $amount, 'p_direction' => $dir, 'p_note' => $note, 'p_reference' => $ref !== '' ? $ref : null));
-            if ($r['ok']) { $done = true; $msg = 'New balance: ' . app_num(g($r['data'], 'balance_minor')) . (!empty($r['data']['duplicate']) ? ' (reference already used: nothing changed)' : ''); }
+            if ($r['ok'] && !empty($r['data']['duplicate'])) {
+                flash_set('err', 'Duplicate: reference ' . $ref . ' was already credited earlier. Nothing changed (balance ' . app_num(g($r['data'], 'balance_minor')) . ').');
+                redirect($back);
+            }
+            if ($r['ok']) { $done = true; $msg = 'New balance: ' . app_num(g($r['data'], 'balance_minor')); }
+        }
+        if (!$done && $ref !== '' && $TT) {   // direct path: the same reference / order id can never be applied twice
+            $tc0 = app_cols($TT); $ors = array();
+            if (isset($tc0['ref_id'])) { $ors[] = 'ref_id.eq.' . pg_safe($ref); }
+            if (isset($tc0['idempotency_key'])) { $ors[] = 'idempotency_key.eq.admin:' . pg_safe($ref); }
+            if ($ors && app_count($TT, array('or' => '(' . implode(',', $ors) . ')'))) {
+                flash_set('err', 'Duplicate: reference ' . $ref . ' was already credited earlier. Nothing changed.');
+                redirect($back);
+            }
         }
         if (!$done) {   // fallback: write the wallet + transaction rows directly
             $w = wallet_of($WT, $uid);
@@ -250,9 +263,13 @@ if ($statusText !== '') {
     echo '<details class="act"><summary class="btn ghost sm">Remove status</summary><form class="pop" method="post" data-confirm="Remove the status line of ' . e($name) . '?">' . hid($id, $tab, 'clear_status')
         . '<div class="muted">&ldquo;' . e($statusText) . '&rdquo;</div><label>Reason (optional)<input name="reason" maxlength="300"></label><button class="btn sm" type="submit">Remove status</button></form></details>';
 }
-echo '<details class="act"><summary class="btn ghost sm">Adjust coins</summary><form class="pop" method="post" data-wallet data-balance="' . e((int) $balance) . '" data-user="' . e($name) . '">' . hid($id, $tab, 'wallet')
-    . '<div class="muted">Current balance: <b>' . app_num($balance) . '</b></div><label>Direction<select name="direction"><option value="credit">Credit (add)</option><option value="debit">Debit (remove)</option></select></label>'
-    . '<label>Amount<input name="amount" type="number" min="1" step="1" required></label><label>Note (required)<input name="note" required maxlength="500"></label><label>Reference (optional)<input name="reference" maxlength="200"></label><button class="btn sm" type="submit">Apply</button></form></details>';
+$pre = isset($_GET['credit_ref']) ? array('ref' => clean_str($_GET['credit_ref'], 200), 'amount' => (int) (isset($_GET['credit_amount']) ? $_GET['credit_amount'] : 0), 'note' => 'Play purchase not credited') : null;
+echo '<details class="act" id="adjustCoins"' . ($pre ? ' open' : '') . '><summary class="btn ghost sm">Adjust coins</summary><form class="pop" method="post" data-wallet data-balance="' . e((int) $balance) . '" data-user="' . e($name) . '">' . hid($id, $tab, 'wallet')
+    . '<div class="muted">Current balance: <b>' . app_num($balance) . '</b></div>'
+    . ($pre ? '<div class="warn" style="margin:0;font-size:13px">Use only after checking the order in Play Console &rarr; Order management. The order id is the reference, so it can never be credited twice.</div>' : '')
+    . '<label>Direction<select name="direction"><option value="credit">Credit (add)</option>' . ($pre ? '' : '<option value="debit">Debit (remove)</option>') . '</select></label>'
+    . '<label>Amount<input name="amount" type="number" min="1" step="1" required value="' . ($pre && $pre['amount'] > 0 ? e($pre['amount']) : '') . '"></label><label>Note (required)<input name="note" required maxlength="500" value="' . ($pre ? e($pre['note']) : '') . '"></label>'
+    . '<label>Reference (' . ($pre ? 'Google order id' : 'optional') . ')<input name="reference" maxlength="200" value="' . ($pre ? e($pre['ref']) : '') . '"' . ($pre ? ($pre['ref'] !== '' ? ' readonly' : ' required placeholder="GPA.1234-5678-..."') : '') . '></label><button class="btn sm" type="submit">Apply</button></form></details>';
 echo '<details class="act"><summary class="btn ghost sm">Change email</summary><form class="pop" method="post" data-confirm="Change the login email of ' . e($name) . '?">' . hid($id, $tab, 'email')
     . '<label>New email<input name="email" type="email" required value="' . e(g($a, 'email', '')) . '"></label><button class="btn sm" type="submit">Save email</button></form></details>';
 echo '<details class="act"><summary class="btn ghost sm">Change password</summary><form class="pop" method="post" data-confirm="Set a new password for ' . e($name) . '?">' . hid($id, $tab, 'password')
@@ -284,6 +301,33 @@ if ($tab === 'profile') {
         foreach (array('email', 'phone', 'created_at', 'last_sign_in_at', 'email_confirmed_at', 'banned_until', 'role') as $k) { echo '<dt>' . e($k) . '</dt><dd>' . app_cell($k, g($a, $k)) . '</dd>'; }
         echo '<dt>providers</dt><dd>' . e(implode(', ', $providers)) . '</dd><dt>user metadata</dt><dd>' . app_cell('m', g($a, 'user_metadata')) . '</dd></dl></div>';
     }
+}
+elseif ($tab === 'purchases') {
+    $page = max(1, (int) (isset($_GET['page']) ? $_GET['page'] : 1)); $per = 50;
+    $pr = app_list_iap_purchases($id, $per, ($page - 1) * $per);
+    $items = $pr['ok'] ? (array) g($pr['data'], 'items', array()) : array();
+    $titles = array(); $pl = app_list_coin_packages(); foreach ((array) g($pl['data'], 'items', array()) as $k) { $titles[(string) g($k, 'product_id')] = (string) g($k, 'title'); }
+    $sm = app_purchase_summary($items);
+    echo '<div class="cards sm"><div class="card"><div class="n teal">' . app_num($sm['credited']) . '</div><div class="l">Credited</div></div><div class="card"><div class="n' . ($sm['rejected'] ? ' neg' : '') . '">' . app_num($sm['rejected']) . '</div><div class="l">Rejected</div></div>'
+        . '<div class="card"><div class="n gold">' . app_num($sm['coins']) . '</div><div class="l">Coins from purchases</div></div><div class="card"><div class="n">' . e(app_inr($sm['inr'])) . '</div><div class="l">Paid (credited)</div></div></div>';
+    echo '<p class="muted">Coins are added by the server only after Google confirms the purchase. If a player paid but got no coins, check the order in <b>Play Console &rarr; Order management</b>, then use <b>Credit missing coins</b> (the order id is used as the reference, so it can never be credited twice).</p>';
+    if (!$pr['ok']) { echo '<div class="flash err">Could not load purchases: ' . e(app_rpc_error($pr)) . '</div>'; }
+    echo '<div class="tbl-wrap"><table><tr><th>Date</th><th>Product</th><th>Coins</th><th>Price</th><th>Google order id</th><th>Status</th><th>Verified</th><th></th></tr>';
+    foreach ($items as $x) {
+        $pid = (string) g($x, 'product_id', ''); $oid = (string) g($x, 'order_id', ''); $st = (string) g($x, 'status', '');
+        echo '<tr><td class="nowrap">' . app_dt(g($x, 'created_at')) . '</td><td><code class="j">' . e($pid) . '</code>' . (isset($titles[$pid]) ? '<div class="muted" style="font-size:12px">' . e($titles[$pid]) . '</div>' : '') . '</td>';
+        echo '<td>' . app_num(g($x, 'coins')) . '</td><td class="nowrap">' . (g($x, 'price_inr') !== null ? e(app_inr($x['price_inr'])) : '-') . '</td>';
+        echo '<td class="nowrap">' . ($oid !== '' ? '<code class="j">' . e($oid) . '</code> <button type="button" class="btn ghost sm" data-copy="' . e($oid) . '">Copy</button>' : '<span class="muted">-</span>') . '</td>';
+        echo '<td>' . app_purchase_badge($st) . '</td><td>' . (g($x, 'verified') ? '<span class="pos">Verified by Google &#10003;</span>' : '<span class="neg">&#10007;</span>') . '</td><td>';
+        if ($oid !== '' && $st !== 'credited') {
+            echo '<a class="btn ghost sm" href="/admin/app/users/?id=' . e(rawurlencode($id)) . '&amp;tab=purchases&amp;credit_ref=' . e(rawurlencode($oid)) . '&amp;credit_amount=' . (int) g($x, 'coins', 0) . '#adjustCoins">Credit missing coins</a>';
+        }
+        echo '</td></tr>';
+    }
+    if (!$items) { echo '<tr><td colspan="8" class="muted">' . ($pr['ok'] ? 'No purchases.' : 'Could not load.') . '</td></tr>'; }
+    echo '</table></div>' . pager($page, $pr['ok'] ? (int) g($pr['data'], 'total', count($items)) : 0, $per);
+    echo '<p class="muted">Missing order not in this list? Open <a href="/admin/app/users/?id=' . e(rawurlencode($id)) . '&amp;tab=purchases&amp;credit_ref=&amp;credit_amount=0#adjustCoins">Credit missing coins</a> and type the order id (GPA.…) as the reference.</p>';
+    echo '<script src="/admin/assets/app-coupons.js?v=1" defer></script>';   // copy buttons
 }
 elseif ($tab === 'wallet') {
     echo '<div class="cards sm"><div class="card"><div class="n gold">' . app_num($balance) . '</div><div class="l">Balance (coins)</div>' . ($w && g($w, 'updated_at') ? '<div class="s">Updated ' . app_dt(g($w, 'updated_at')) . '</div>' : '') . '</div></div>';

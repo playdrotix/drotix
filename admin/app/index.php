@@ -10,6 +10,16 @@ $week = date('c', strtotime('-7 days'));
 $cards = array();
 $cards[] = array(app_count($pt), 'Players', '/admin/app/users/');
 $on = app_online(100);
+$pp = app_list_iap_purchases(null, 500, 0);
+$tk = app_list_tickets('active', '', '', 1, 0);
+if ($tk['ok']) { $tc = (array) g($tk['data'], 'counts', array()); $cards[] = array((int) g($tc, 'open', 0) + (int) g($tc, 'in_progress', 0) + (int) g($tc, 'waiting_user', 0), 'Support: open tickets (' . (int) g($tc, 'unread', 0) . ' unread)', '/admin/app/tickets/'); }
+if ($pp['ok']) {
+    $midnight = strtotime('today'); $pc = 0; $pinr = 0.0; $rej = 0;
+    foreach ((array) g($pp['data'], 'items', array()) as $x) {
+        if (strtotime((string) g($x, 'created_at', '')) < $midnight) { continue; }
+        if (g($x, 'status') === 'credited') { $pc++; $pinr += (float) g($x, 'price_inr', 0); } elseif (g($x, 'status') === 'rejected') { $rej++; }
+    }
+}
 if ($on['ok']) { $cards[] = array($on['count'], 'Online now', '/admin/app/online/'); }
 if (isset($pc['created_at'])) {
     $cards[] = array(app_count($pt, array('created_at' => 'gte.' . $today)), 'New today', '');
@@ -31,6 +41,10 @@ echo '<div class="row"><a class="btn ghost sm" href="/admin/app/">Refresh</a><sp
 echo '<div class="cards">';
 foreach ($cards as $c) { echo '<div class="card"><div class="n">' . app_num($c[0]) . '</div><div class="l">' . ($c[2] ? '<a href="' . e($c[2]) . '">' . e($c[1]) . '</a>' : e($c[1])) . '</div></div>'; }
 echo '</div>';
+if ($pp['ok']) {
+    echo '<h2>Purchases today</h2><div class="cards"><div class="card"><div class="n teal">' . app_num($pc) . '</div><div class="l"><a href="/admin/app/purchases/?status=credited">Purchases today</a></div><div class="s">' . e(app_inr($pinr)) . ' paid</div></div>';
+    echo '<div class="card' . ($rej ? ' hot' : '') . '"><div class="n' . ($rej ? ' neg' : '') . '"' . ($rej ? ' style="color:var(--rd)"' : '') . '>' . app_num($rej) . '</div><div class="l"><a href="/admin/app/purchases/?status=rejected">Rejected today</a></div></div></div>';
+}
 
 echo '<h2>All app tables</h2><div class="tbl-wrap"><table><tr><th>Table</th><th>Rows</th></tr>';
 foreach (app_tables() as $t => $info) {
