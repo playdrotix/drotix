@@ -581,6 +581,111 @@ function app_money($v, $cur) {
     return (isset($sym[$c]) ? $sym[$c] : ($c !== '' ? $c . ' ' : "\u{20B9}")) . number_format((float) $v, 2);
 }
 
+/* ---------- home banners + coin packs (whole app) ----------
+ * Banner = {id, title, subtitle, image_url, action_type 'none'|'route'|'url', action_value, audience 'all'|'signed_in'|'guests',
+ *           starts_at, ends_at, active, sort_order, created_at, updated_at, state 'live'|'scheduled'|'ended'|'disabled'}
+ * Pack   = {id, product_id, title, coins, bonus_coins, total_coins, price_inr, badge, active, sort_order, created_at, updated_at} */
+const APP_BANNER_BUCKET = 'drotix-banners';
+function app_banner_table() { return app_has_table('home_banners') ? 'home_banners' : app_find_table(array('image_url', 'action_type'), '/banner|poster|promo/'); }
+function app_pack_table() { return app_has_table('coin_packages') ? 'coin_packages' : app_find_table(array('product_id', 'coins'), '/pack|package|product|shop/'); }
+function app_banner_norm($b) {
+    $b['active'] = isset($b['active']) ? (bool) $b['active'] : true;
+    $b['sort_order'] = (int) g($b, 'sort_order', 0);
+    if (!isset($b['state'])) {
+        $now = time();
+        if (!$b['active']) { $b['state'] = 'disabled'; }
+        elseif (!empty($b['ends_at']) && strtotime($b['ends_at']) <= $now) { $b['state'] = 'ended'; }
+        elseif (!empty($b['starts_at']) && strtotime($b['starts_at']) > $now) { $b['state'] = 'scheduled'; }
+        else { $b['state'] = 'live'; }
+    }
+    return $b;
+}
+function app_pack_norm($k) {
+    $k['active'] = isset($k['active']) ? (bool) $k['active'] : true;
+    $k['bonus_coins'] = (int) g($k, 'bonus_coins', 0);
+    $k['total_coins'] = isset($k['total_coins']) ? (int) $k['total_coins'] : (int) g($k, 'coins', 0) + $k['bonus_coins'];
+    $k['sort_order'] = (int) g($k, 'sort_order', 0);
+    return $k;
+}
+function app_sort_rows($rows) { usort($rows, function ($a, $b) { return ((int) g($a, 'sort_order', 0) - (int) g($b, 'sort_order', 0)) ?: strcmp((string) g($a, 'created_at', ''), (string) g($b, 'created_at', '')); }); return $rows; }
+
+/** {status, items: [Banner]} */
+function app_list_banners() {
+    $r = app_rpc('admin_list_banners');
+    if ($r['ok']) { $r['data']['items'] = app_sort_rows(array_map('app_banner_norm', (array) g($r['data'], 'items', array()))); return $r; }
+    $t = app_banner_table(); if (!$t) { return $r; }
+    list($rows, , $x) = app_select($t, array(), 500, 0, false);
+    if (!$x['ok']) { return $r; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'items' => app_sort_rows(array_map('app_banner_norm', $rows))));
+}
+/** $b = array(id|null, image_url, title, subtitle, action_type, action_value, audience, starts_at, ends_at, active, sort_order) -> {status, banner} */
+function app_save_banner($b) {
+    $r = app_rpc('admin_save_banner', array('p_id' => $b['id'] ?: null, 'p_image_url' => $b['image_url'], 'p_title' => $b['title'] !== '' ? $b['title'] : null,
+        'p_subtitle' => $b['subtitle'] !== '' ? $b['subtitle'] : null, 'p_action_type' => $b['action_type'], 'p_action_value' => $b['action_value'] !== '' ? $b['action_value'] : null,
+        'p_audience' => $b['audience'], 'p_starts_at' => $b['starts_at'], 'p_ends_at' => $b['ends_at'], 'p_active' => (bool) $b['active'], 'p_sort_order' => (int) $b['sort_order']));
+    if ($r['ok']) { return $r; }
+    $t = app_banner_table(); if (!$t) { return $r; }
+    $c = app_cols($t); $row = array();
+    foreach (array('image_url', 'title', 'subtitle', 'action_type', 'action_value', 'audience', 'starts_at', 'ends_at', 'active', 'sort_order') as $k) {
+        if (isset($c[$k])) { $v = $b[$k]; $row[$k] = ($v === '' ? null : $v); }
+    }
+    if (isset($c['updated_at'])) { $row['updated_at'] = date('c'); }
+    $x = $b['id'] ? app_db('PATCH', $t, array('id' => 'eq.' . $b['id']), $row, 'return=representation') : app_db('POST', $t, array(), app_fill_required($t, $row), 'return=representation');
+    if (!$x['ok']) { $x['error'] = 'Save failed: ' . $x['error']; return $x; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'banner' => app_banner_norm((array) g($x['data'], '0', array()))));
+}
+function app_delete_banner($id) {
+    $r = app_rpc('admin_delete_banner', array('p_id' => $id));
+    if ($r['ok']) { return $r; }
+    $t = app_banner_table(); if (!$t) { return $r; }
+    return app_db('DELETE', $t, array('id' => 'eq.' . $id), null, 'return=minimal');
+}
+/** What the app shows now (live banners in order). */
+function app_home_banners() { return app_rpc('get_home_banners'); }
+
+/** {status, items: [Pack]} */
+function app_list_coin_packages() {
+    $r = app_rpc('admin_list_coin_packages');
+    if ($r['ok']) { $r['data']['items'] = app_sort_rows(array_map('app_pack_norm', (array) g($r['data'], 'items', array()))); return $r; }
+    $t = app_pack_table(); if (!$t) { return $r; }
+    list($rows, , $x) = app_select($t, array(), 500, 0, false);
+    if (!$x['ok']) { return $r; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'items' => app_sort_rows(array_map('app_pack_norm', $rows))));
+}
+/** $k = array(id|null, product_id, title, coins, price_inr, bonus_coins, badge, active, sort_order) -> {status, pack} */
+function app_save_coin_package($k) {
+    $r = app_rpc('admin_save_coin_package', array('p_id' => $k['id'] ?: null, 'p_product_id' => $k['product_id'], 'p_title' => $k['title'], 'p_coins' => (int) $k['coins'],
+        'p_price_inr' => (float) $k['price_inr'], 'p_bonus_coins' => (int) $k['bonus_coins'], 'p_badge' => $k['badge'] !== '' ? $k['badge'] : null, 'p_active' => (bool) $k['active'], 'p_sort_order' => (int) $k['sort_order']));
+    if ($r['ok']) { return $r; }
+    $t = app_pack_table(); if (!$t) { return $r; }
+    $c = app_cols($t); $row = array();
+    foreach (array('product_id', 'title', 'coins', 'price_inr', 'bonus_coins', 'badge', 'active', 'sort_order') as $f) { if (isset($c[$f])) { $row[$f] = ($k[$f] === '' ? null : $k[$f]); } }
+    if (isset($c['updated_at'])) { $row['updated_at'] = date('c'); }
+    $x = $k['id'] ? app_db('PATCH', $t, array('id' => 'eq.' . $k['id']), $row, 'return=representation') : app_db('POST', $t, array(), app_fill_required($t, $row), 'return=representation');
+    if (!$x['ok']) { $x['error'] = 'Save failed: ' . $x['error']; return $x; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'pack' => app_pack_norm((array) g($x['data'], '0', array()))));
+}
+function app_set_coin_package_active($id, $on) {
+    $r = app_rpc('admin_set_coin_package_active', array('p_id' => $id, 'p_active' => (bool) $on));
+    if ($r['ok']) { return $r; }
+    $t = app_pack_table(); if (!$t) { return $r; }
+    return app_db('PATCH', $t, array('id' => 'eq.' . $id), array('active' => (bool) $on), 'return=minimal');
+}
+/** Active packs as the Shop shows them. */
+function app_get_coin_packages() { return app_rpc('get_coin_packages'); }
+/** Price: 2 decimals only when needed (49 -> 49, 49.5 -> 49.50). */
+function app_inr($v) { $v = (float) $v; return "\u{20B9}" . (floor($v) == $v ? number_format($v) : number_format($v, 2)); }
+
+/** One-time signed upload link to any bucket. array(uploadUrl, publicUrl, error) */
+function app_signed_upload_to($bucket, $path, $upsert = false) {
+    $enc = implode('/', array_map('rawurlencode', explode('/', $path)));
+    $r = app_http('POST', '/storage/v1/object/upload/sign/' . rawurlencode($bucket) . '/' . $enc, (object) array(), $upsert ? array('x-upsert' => 'true') : array());
+    list($base, ) = app_base();
+    $u = (string) gx($r['data'], array('url', 'signedURL'), '');
+    if (!$r['ok'] || $u === '') { return array('', '', $r['error'] !== '' ? $r['error'] : 'Could not create the upload link (does the bucket ' . $bucket . ' exist?)'); }
+    return array($base . '/storage/v1' . (strpos($u, '/') === 0 ? '' : '/') . $u, $base . '/storage/v1/object/public/' . rawurlencode($bucket) . '/' . $enc, '');
+}
+
 const APP_UPDATES_BUCKET = 'drotix-app-updates';
 /** One-time signed upload URL (browser uploads the APK straight to Storage; no key in the browser). array(uploadUrl, publicUrl, error) */
 function app_signed_upload($path) {
@@ -819,7 +924,9 @@ function app_action_label($a) {
                'tournament_create' => 'Created tournament', 'create_tournament' => 'Created tournament', 'tournament_start' => 'Started tournament', 'generate_bracket' => 'Started tournament',
                'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row',
                'publish_legal' => 'Published legal document', 'publish_app_release' => 'Published app release',
-               'create_coupon' => 'Created coupon', 'edit_coupon' => 'Edited coupon', 'enable_coupon' => 'Enabled coupon', 'disable_coupon' => 'Disabled coupon');
+               'create_coupon' => 'Created coupon', 'edit_coupon' => 'Edited coupon', 'enable_coupon' => 'Enabled coupon', 'disable_coupon' => 'Disabled coupon',
+               'create_banner' => 'Created home banner', 'edit_banner' => 'Edited home banner', 'delete_banner' => 'Deleted home banner',
+               'create_coin_pack' => 'Created coin pack', 'edit_coin_pack' => 'Edited coin pack', 'enable_coin_pack' => 'Enabled coin pack', 'disable_coin_pack' => 'Disabled coin pack');
     return isset($m[$a]) ? $m[$a] : ucfirst(str_replace('_', ' ', $a));
 }
 /** Error text for a failed game function, with the fix when no app admin exists. */
@@ -937,15 +1044,16 @@ function app_head($title, $sub) {
         array('Whole app', 'Applies to all players', array(
             'online' => array('/admin/app/online/', 'Online now'), 'cast' => array('/admin/app/broadcast/', 'Broadcast'),
             'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),
-            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'))),
+            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'banners' => array('/admin/app/banners/', 'Home banners'), 'packs' => array('/admin/app/packs/', 'Coin packs'))),
         array('Data', 'Reports & raw data', array(
             'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'), 'audit' => array('/admin/app/audit/', 'Audit log'), 'check' => array('/admin/app/check/', 'Admin check'))),
     );
     $global = array('online' => 'Every player of the app: who is online right now (live) and who is offline.', 'cast' => 'Sent to every player of the app, not to one player.',
                     'legal' => 'One Privacy Policy and one Terms of Service for the whole app: a new version is shown to every player in the app.',
                     'rel' => 'One update for the whole app: every player on an older version sees the update screen.',
-                    'tour' => 'Tournaments are open to all players.', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
-    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=5"><script src="/admin/assets/app.js?v=5" defer></script>';
+                    'tour' => 'Tournaments are open to all players.', 'banners' => 'Home banners are shown on the Home screen of every player of the app.',
+                    'packs' => 'Coin packs are shown in the Shop of every player of the app.', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
+    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=6"><script src="/admin/assets/app.js?v=5" defer></script>';
     echo '<div class="apptop"><div class="navgroups">';
     foreach ($groups as $gr) {
         echo '<div class="navgroup"><div class="ngh">' . e($gr[0]) . ' <span>' . e($gr[1]) . '</span></div><nav class="subnav">';

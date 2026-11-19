@@ -87,3 +87,19 @@ a.code{color:var(--t);text-decoration:none}
 .ngh{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--tl);font-weight:800}
 .ngh span{color:var(--m);letter-spacing:0;text-transform:none;font-weight:400;margin-left:4px}
 .scope{margin:-8px 0 18px;padding:10px 14px;border:1px solid var(--tl);border-radius:12px;background:rgba(47,184,180,.08);font-size:14px}
+/* home banners: 16:7 like the app */
+.bn{position:relative;aspect-ratio:16/7;border-radius:18px;overflow:hidden;background:#17171C center/cover no-repeat;border:1px solid var(--b)}
+.bn-txt{position:absolute;left:0;right:0;bottom:0;padding:28px 16px 12px;background:linear-gradient(transparent,rgba(0,0,0,.85));display:grid;gap:2px}
+.bn-txt b{font-size:17px;color:#fff}.bn-txt span{font-size:13px;color:#D0D0D8}
+.bn-empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--m)}
+.bcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.bcard{background:var(--s);border:1px solid var(--b);border-radius:18px;padding:10px;display:grid;gap:10px}
+.bmeta2{display:grid;gap:6px;padding:0 4px 4px}
+.phone{max-width:420px;background:#0B0B0F;border:1px solid var(--b2);border-radius:26px;padding:14px;display:grid;gap:12px}
+/* coin packs: Shop row like the app */
+.shop{background:#0B0B0F;border:1px solid var(--b2);border-radius:20px;padding:12px;display:grid;gap:10px}
+.pk{display:flex;align-items:center;gap:12px;background:#17171C;border:1px solid #2A2A33;border-radius:16px;padding:12px 14px}
+.pk-coin{font-size:26px;line-height:1}.pk-main{flex:1;display:grid;gap:2px;min-width:0}.pk-main b{font-size:15px}.pk-main span{color:#A8A8B5;font-size:13px}
+.pk-bonus{color:#2ECC71;font-size:13px;font-weight:700}
+.pk-badge{background:rgba(255,194,77,.15);color:#FFC24D;border:1px solid #FFC24D;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:800;white-space:nowrap}
+.pk-price{background:#D4156B;color:#fff;border-radius:99px;padding:7px 14px;font-weight:800;white-space:nowrap}

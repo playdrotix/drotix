@@ -83,3 +83,10 @@ select table_name, column_name, data_type
 
 -- D) Is the APK bucket there and public?
 select id, public from storage.buckets where id = 'drotix-app-updates';
+
+-- ---------------------------------------------------------------------
+-- 5) Storage bucket for Home banner images (public). Does nothing if it exists.
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('drotix-banners', 'drotix-banners', true)
+on conflict (id) do nothing;
