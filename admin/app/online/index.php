@@ -3,9 +3,9 @@
 require __DIR__ . '/../../../includes/app_admin_api.php';
 app_require();
 
-$o = app_online(200);
+$o = app_online(1000);   // every player online right now (whole app)
 app_head('Online now', 'online');
-echo '<div class="row"><a class="btn ghost sm" href="/admin/app/online/">Refresh</a><span class="muted">Auto-refreshes every 30 s &middot; online = seen in the last 90 s &middot; ' . e(date('H:i:s')) . '</span></div><div data-autorefresh="30"></div>';
+echo '<div class="row"><a class="btn ghost sm" href="/admin/app/online/">Refresh</a><span class="muted">All players of the app who are online now &middot; auto-refreshes every 30 s &middot; online = seen in the last 90 s &middot; ' . e(date('H:i:s')) . '</span></div><div data-autorefresh="30"></div>';
 if (!$o['ok']) { echo '<div class="flash err">Could not load: ' . e(app_rpc_error(array('error' => $o['error'], 'status' => 0))) . '</div>'; admin_foot(); exit; }
 echo '<div class="cards sm"><div class="card"><div class="n teal">' . app_num($o['count']) . '</div><div class="l">Online now</div></div>';
 $inMatch = 0; foreach ($o['items'] as $i) { if (!empty($i['in_match'])) { $inMatch++; } }

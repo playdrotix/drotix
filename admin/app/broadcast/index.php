@@ -19,8 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 app_head('Broadcast', 'cast');
 $nt = app_notif_table();
-echo '<div class="warn"><b>Everyone gets this.</b> The notification goes to <b>all active players</b>' . ($nt ? ' (table drotix.' . e($nt) . ')' : '') . '. It cannot be recalled.</div>';
-echo '<form method="post" class="panel" style="max-width:560px;display:grid;gap:12px" data-confirm1="Send this notification to ALL active players?" data-confirm2="Really send? This cannot be undone.">' . csrf_field();
+echo '<div class="warn"><b>Everyone gets this.</b> The message goes to <b>every player of the app</b> (push + in-app inbox). It is not for one player: to message one player, open Players &rarr; that player &rarr; Send notification. It cannot be recalled.</div>';
+echo '<form method="post" class="panel" style="max-width:560px;display:grid;gap:12px" data-confirm1="Send this message to EVERY player of the app?" data-confirm2="Really send? This cannot be undone.">' . csrf_field();
 echo '<label class="fl">Title<input name="title" required maxlength="80" placeholder="New tournament this Sunday!"></label>';
 echo '<label class="fl">Message<textarea name="body" required maxlength="500"></textarea></label>';
 echo '<label class="fl">Type SEND to confirm<input name="confirm_word" required autocomplete="off"></label>';

@@ -476,6 +476,33 @@
       "lastAccessed": "2026-11-19T14:35:02.151Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T14:35:02.151Z"
+    },
+    "cmd-1795104017247": {
+      "key": "cmd-1795104017247",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && grep -n \\\"\\\\$tabs = array('users'\\\" -A12 includes/app_admin_api.php | head -20\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:00:17.247Z",
+      "lastAccessed": "2026-11-19T16:00:17.247Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:00:17.247Z"
+    },
+    "cmd-1795104032924": {
+      "key": "cmd-1795104032924",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:00:32.924Z",
+      "lastAccessed": "2026-11-19T16:00:32.924Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:00:32.924Z"
+    },
+    "cmd-1795104045127": {
+      "key": "cmd-1795104045127",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:00:45.127Z",
+      "lastAccessed": "2026-11-19T16:00:45.127Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:00:45.127Z"
     }
   },
   "version": "3.0.0"

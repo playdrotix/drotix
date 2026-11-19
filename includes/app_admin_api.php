@@ -493,7 +493,7 @@ function app_notify($userId, $title, $body) {
     if ($userId !== null) { $ids = array($userId); }
     else {
         $pt = app_profiles_table(); $idc = app_profile_idcol(); $q = array('select' => $idc);
-        if (array_key_exists('account_status', app_cols($pt))) { $q['account_status'] = 'eq.active'; }
+        if (array_key_exists('account_status', app_cols($pt))) { $q['account_status'] = 'neq.deleted'; }   // every player of the app
         for ($o = 0; $o < 200000; $o += 1000) { list($rows, , ) = app_select($pt, $q, 1000, $o, false); foreach ($rows as $r) { $ids[] = $r[$idc]; } if (count($rows) < 1000) { break; } }
     }
     $base = app_fill_required($nt, array($oc => $ids ? $ids[0] : null, 'title' => $title, 'body' => $body), $hints);
@@ -669,12 +669,29 @@ function app_head($title, $sub) {
     $origin = preg_match('~^https://[^/]+~', $sbUrl, $m) ? ' ' . $m[0] : '';
     header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'" . $origin . "; form-action 'self'; frame-ancestors 'none'", true);
     admin_head($title, 'app');
-    $tabs = array('users' => array('/admin/app/users/', 'Players'), 'online' => array('/admin/app/online/', 'Online now'), 'tour' => array('/admin/app/tournaments/', 'Tournaments'),
-                  'reports' => array('/admin/app/reports/', 'Reports'), 'appeals' => array('/admin/app/appeals/', 'Appeals'),
-                  'cast' => array('/admin/app/broadcast/', 'Broadcast'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'legal' => array('/admin/app/legal/', 'Legal'), 'rel' => array('/admin/app/releases/', 'App releases'), 'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'));
-    $tabs['audit'] = array('/admin/app/audit/', 'Audit log');
-    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=4"><script src="/admin/assets/app.js?v=4" defer></script>';
-    echo '<div class="apptop"><nav class="subnav">';
-    foreach ($tabs as $k => $t) { echo '<a href="' . e($t[0]) . '"' . ($k === $sub ? ' class="on"' : '') . '>' . e($t[1]) . '</a>'; }
-    echo '</nav></div>';
+    // Two groups: pages about individual players, and pages that apply to the WHOLE app (every player).
+    $groups = array(
+        array('Players', 'One player at a time', array(
+            'users' => array('/admin/app/users/', 'Players'), 'reports' => array('/admin/app/reports/', 'Reports'),
+            'appeals' => array('/admin/app/appeals/', 'Appeals'))),
+        array('Whole app', 'Applies to all players', array(
+            'online' => array('/admin/app/online/', 'Online now'), 'cast' => array('/admin/app/broadcast/', 'Broadcast'),
+            'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),
+            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'))),
+        array('Data', 'Reports & raw data', array(
+            'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'), 'audit' => array('/admin/app/audit/', 'Audit log'))),
+    );
+    $global = array('online' => 'Shows every player who is online right now.', 'cast' => 'Sent to every player of the app, not to one player.',
+                    'legal' => 'One Privacy Policy and one Terms of Service for the whole app, shown to every player.',
+                    'rel' => 'One app update for everyone: every player on an older version sees the update screen.',
+                    'tour' => 'Tournaments are open to all players.', 'coupons' => 'Any new player can use a coupon code once.');
+    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=5"><script src="/admin/assets/app.js?v=5" defer></script>';
+    echo '<div class="apptop"><div class="navgroups">';
+    foreach ($groups as $gr) {
+        echo '<div class="navgroup"><div class="ngh">' . e($gr[0]) . ' <span>' . e($gr[1]) . '</span></div><nav class="subnav">';
+        foreach ($gr[2] as $k => $t) { echo '<a href="' . e($t[0]) . '"' . ($k === $sub ? ' class="on"' : '') . '>' . e($t[1]) . '</a>'; }
+        echo '</nav></div>';
+    }
+    echo '</div></div>';
+    if (isset($global[$sub])) { echo '<div class="scope"><span class="badge b-teal">ALL PLAYERS</span> ' . e($global[$sub]) . '</div>'; }
 }

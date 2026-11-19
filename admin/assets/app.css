@@ -81,3 +81,9 @@ a.code{color:var(--t);text-decoration:none}
 .switch{width:42px;height:24px;border-radius:99px;border:1px solid var(--b2);background:#3A1520;position:relative;cursor:pointer;padding:0}
 .switch i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#E5484D;transition:left .15s}
 .switch.on{background:rgba(46,204,113,.2);border-color:#2ECC71}.switch.on i{left:20px;background:#2ECC71}
+/* grouped Mobile App navigation */
+.navgroups{display:flex;flex-wrap:wrap;gap:14px 26px}
+.navgroup{display:grid;gap:6px}
+.ngh{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--tl);font-weight:800}
+.ngh span{color:var(--m);letter-spacing:0;text-transform:none;font-weight:400;margin-left:4px}
+.scope{margin:-8px 0 18px;padding:10px 14px;border:1px solid var(--tl);border-radius:12px;background:rgba(47,184,180,.08);font-size:14px}
