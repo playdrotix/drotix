@@ -80,6 +80,42 @@
       "lastAccessed": "2026-11-19T07:45:42.450Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T07:45:42.450Z"
+    },
+    "cmd-1795074501482": {
+      "key": "cmd-1795074501482",
+      "value": "{\"command\":\"echo \\\"== assetlinks ==\\\"; curl -sS -i --max-time 15 https://playdrotix.in/.well-known/assetlinks.json | head -20; echo; echo \\\"== join ==\\\"; curl -sS -I --max-time 15 https://playdrotix.in/join/K7P2QX | head -8; curl -s --max-time 15 https://playdrotix.in/join/K7P2QX | grep -o 'og:description\\\" content=\\\"[^\\\"]*'; echo \\\"== google ==\\\"; curl -s --max-time 20 \\\"https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://playdrotix.in&relation=delegate_permission/common.handle_all_urls\\\" | head -30\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:48:21.482Z",
+      "lastAccessed": "2026-11-19T07:48:21.482Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:48:21.482Z"
+    },
+    "cmd-1795074506706": {
+      "key": "cmd-1795074506706",
+      "value": "{\"command\":\"curl -sS -I --max-time 15 https://www.playdrotix.in/.well-known/assetlinks.json | head -5; curl -sS -I --max-time 15 \\\"https://playdrotix.in/join?code=k7p2qx\\\" | head -1\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:48:26.706Z",
+      "lastAccessed": "2026-11-19T07:48:26.706Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:48:26.706Z"
+    },
+    "cmd-1795074687288": {
+      "key": "cmd-1795074687288",
+      "value": "{\"command\":\"which adb 2>/dev/null || ls \\\"$LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe\\\" 2>/dev/null || echo \\\"adb not found on PC\\\"\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:51:27.288Z",
+      "lastAccessed": "2026-11-19T07:51:27.288Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:51:27.288Z"
+    },
+    "cmd-1795074692470": {
+      "key": "cmd-1795074692470",
+      "value": "{\"command\":\"\\\"$LOCALAPPDATA/Android/Sdk/platform-tools/adb.exe\\\" devices\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:51:32.470Z",
+      "lastAccessed": "2026-11-19T07:51:32.470Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:51:32.470Z"
     }
   },
   "version": "3.0.0"
