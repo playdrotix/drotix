@@ -539,6 +539,24 @@
       "lastAccessed": "2026-11-19T16:22:13.703Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T16:22:13.703Z"
+    },
+    "cmd-1795105652623": {
+      "key": "cmd-1795105652623",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && grep -n \\\"^function app_list_coupons\\\\|^function app_save_coupon\\\\|^function app_set_coupon_active\\\\|^function app_coupon_redemptions\\\" includes/app_admin_api.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:27:32.623Z",
+      "lastAccessed": "2026-11-19T16:27:32.623Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:27:32.623Z"
+    },
+    "cmd-1795105692592": {
+      "key": "cmd-1795105692592",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"$S/patch_api10.py\\\" includes/app_admin_api.php && python \\\"$S/phpcheck.py\\\" includes/app_admin_api.php admin/app/coupons/index.php && sed -i \\\"s/'coupons' => 'Any new player can use a coupon code once.'/'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).'/\\\" includes/app_admin_api.php && grep -c \\\"A coupon works for every player\\\" includes/app_admin_api.php; git status --short | grep -v -e claude-flow -e swarm\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:28:12.592Z",
+      "lastAccessed": "2026-11-19T16:28:12.592Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:28:12.592Z"
     }
   },
   "version": "3.0.0"

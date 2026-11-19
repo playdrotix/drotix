@@ -373,16 +373,125 @@ function app_publish_app_release($a) {
  * Coupon = {code, coins, max_uses|null, used_count, starts_at|null, expires_at|null, active, note|null, created_at, updated_at,
  *           state: 'live'|'scheduled'|'expired'|'used_up'|'disabled'} */
 /** {status, total_coins_given, items: [Coupon]} */
-function app_list_coupons($search) { return app_rpc('admin_list_coupons', array('p_search' => $search !== '' ? $search : null)); }
+function app_list_coupons($search) {
+    $r = app_rpc('admin_list_coupons', array('p_search' => $search !== '' ? $search : null));
+    if ($r['ok']) { return $r; }
+    $t = app_coupon_table();
+    if (!$t) { return $r; }
+    $q = array('order' => (array_key_exists('created_at', app_cols($t)) ? 'created_at' : 'code') . '.desc');
+    if ($search !== '') { $s = pg_safe($search); $q['or'] = '(code.ilike.*' . $s . '*' . (array_key_exists('note', app_cols($t)) ? ',note.ilike.*' . $s . '*' : '') . ')'; }
+    list($rows, , $x) = app_select($t, $q, 1000, 0, false);
+    if (!$x['ok']) { return $r; }
+    $given = 0;
+    foreach ($rows as &$c) { $c = app_coupon_norm($c); $given += (int) $c['used_count'] * (int) $c['coins']; }
+    unset($c);
+    $rt = app_coupon_redemption_table();
+    if ($rt && $rt['coins']) {   // exact coins given (coins can change over time)
+        list($all, , $y) = app_select($rt['table'], array('select' => $rt['coins']), 100000, 0, false);
+        if ($y['ok']) { $given = 0; foreach ($all as $a) { $given += (int) g($a, $rt['coins'], 0); } }
+    }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'total_coins_given' => $given, 'items' => $rows));
+}
+/** The game's coupons table (code + coins). */
+function app_coupon_table() {
+    if (app_has_table('coupons') && array_key_exists('code', app_cols('coupons'))) { return 'coupons'; }
+    foreach (app_tables() as $t => $i) { if (preg_match('/coupon|promo|voucher/', $t) && isset($i['cols']['code'], $i['cols']['coins'])) { return $t; } }
+    return null;
+}
+/** Redemptions table: array(table, link col, link kind code|id, user col, coins col|null, when col|null) or null. */
+function app_coupon_redemption_table() {
+    $ct = app_coupon_table();
+    foreach (app_tables() as $t => $i) {
+        if ($t === $ct || !preg_match('/(coupon|promo|voucher|redeem|redemption|referral_code_use|code_use)/', $t)) { continue; }
+        $link = null; $kind = 'code';
+        foreach (array('coupon_code', 'code') as $c) { if (isset($i['cols'][$c])) { $link = $c; break; } }
+        if (!$link) { foreach (array('coupon_id', 'promo_id', 'voucher_id') as $c) { if (isset($i['cols'][$c])) { $link = $c; $kind = 'id'; break; } } }
+        $u = app_owner_col($t);
+        if (!$link || !$u) { continue; }
+        $coins = null; foreach (array('coins', 'coins_granted', 'amount', 'reward_coins') as $c) { if (isset($i['cols'][$c])) { $coins = $c; break; } }
+        $when = null; foreach (array('redeemed_at', 'created_at', 'used_at') as $c) { if (isset($i['cols'][$c])) { $when = $c; break; } }
+        return array('table' => $t, 'link' => $link, 'kind' => $kind, 'user' => $u, 'coins' => $coins, 'when' => $when);
+    }
+    return null;
+}
+/** Make a coupon row look like the game's Coupon object (adds state). */
+function app_coupon_norm($c) {
+    $c['used_count'] = (int) gx($c, array('used_count', 'uses', 'redeemed_count'), 0);
+    $c['max_uses'] = isset($c['max_uses']) ? $c['max_uses'] : null;
+    $c['active'] = isset($c['active']) ? (bool) $c['active'] : (isset($c['is_active']) ? (bool) $c['is_active'] : true);
+    if (!isset($c['state'])) {
+        $now = time();
+        if (!$c['active']) { $c['state'] = 'disabled'; }
+        elseif (!empty($c['expires_at']) && strtotime($c['expires_at']) <= $now) { $c['state'] = 'expired'; }
+        elseif ($c['max_uses'] !== null && $c['used_count'] >= (int) $c['max_uses']) { $c['state'] = 'used_up'; }
+        elseif (!empty($c['starts_at']) && strtotime($c['starts_at']) > $now) { $c['state'] = 'scheduled'; }
+        else { $c['state'] = 'live'; }
+    }
+    return $c;
+}
 /** Create or edit (same code). -> {status, created: bool, coupon: Coupon} | {status:'error', message} */
 function app_save_coupon($code, $coins, $maxUses, $startsAt, $expiresAt, $note, $active) {
-    return app_rpc('admin_save_coupon', array('p_code' => strtoupper($code), 'p_coins' => (int) $coins, 'p_max_uses' => $maxUses === null ? null : (int) $maxUses,
+    $code = strtoupper($code);
+    $r = app_rpc('admin_save_coupon', array('p_code' => $code, 'p_coins' => (int) $coins, 'p_max_uses' => $maxUses === null ? null : (int) $maxUses,
         'p_starts_at' => $startsAt, 'p_expires_at' => $expiresAt, 'p_note' => $note !== '' ? $note : null, 'p_active' => (bool) $active));
+    if ($r['ok']) { return $r; }
+    // fallback: write the coupon straight into the game's coupons table (same rules as the game)
+    $t = app_coupon_table();
+    if (!$t) { return $r; }
+    $pt = app_profiles_table();
+    if (array_key_exists('referral_code', app_cols($pt)) && app_count($pt, array('referral_code' => 'ilike.' . $code))) {
+        return array('ok' => false, 'error' => 'This code is already a player\'s referral code. Choose another code.', 'data' => null);
+    }
+    $c = app_cols($t);
+    list($old, , ) = app_select($t, array('code' => 'eq.' . $code), 1, 0, false);
+    $row = array();
+    foreach (array('coins' => (int) $coins, 'max_uses' => $maxUses === null ? null : (int) $maxUses, 'starts_at' => $startsAt, 'expires_at' => $expiresAt,
+                   'note' => $note !== '' ? $note : null, 'active' => (bool) $active, 'is_active' => (bool) $active, 'updated_at' => date('c')) as $k => $v) {
+        if (isset($c[$k])) { $row[$k] = $v; }
+    }
+    if ($old) { $x = app_db('PATCH', $t, array('code' => 'eq.' . $code), $row, 'return=representation'); $created = false; }
+    else { $row['code'] = $code; $x = app_db('POST', $t, array(), app_fill_required($t, $row), 'return=representation'); $created = true; }
+    if (!$x['ok']) { $x['error'] = 'Save failed: ' . $x['error']; return $x; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'created' => $created, 'coupon' => app_coupon_norm((array) g($x['data'], '0', array()))));
 }
 /** -> {status, coupon} */
-function app_set_coupon_active($code, $active) { return app_rpc('admin_set_coupon_active', array('p_code' => $code, 'p_active' => (bool) $active)); }
+function app_set_coupon_active($code, $active) {
+    $r = app_rpc('admin_set_coupon_active', array('p_code' => $code, 'p_active' => (bool) $active));
+    if ($r['ok']) { return $r; }
+    $t = app_coupon_table();
+    if (!$t) { return $r; }
+    $col = array_key_exists('active', app_cols($t)) ? 'active' : (array_key_exists('is_active', app_cols($t)) ? 'is_active' : null);
+    if (!$col) { return $r; }
+    $patch = array($col => (bool) $active); if (array_key_exists('updated_at', app_cols($t))) { $patch['updated_at'] = date('c'); }
+    $x = app_db('PATCH', $t, array('code' => 'eq.' . strtoupper($code)), $patch, 'return=representation');
+    if (!$x['ok']) { return $x; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'coupon' => app_coupon_norm((array) g($x['data'], '0', array()))));
+}
 /** -> {status, total, items: [{user_id, username, player_no, coins, redeemed_at}]} */
-function app_coupon_redemptions($code, $limit = 100, $offset = 0) { return app_rpc('admin_coupon_redemptions', array('p_code' => $code, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset)); }
+function app_coupon_redemptions($code, $limit = 100, $offset = 0) {
+    $r = app_rpc('admin_coupon_redemptions', array('p_code' => $code, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset));
+    if ($r['ok']) { return $r; }
+    $rt = app_coupon_redemption_table();
+    if (!$rt) { return $r; }
+    $val = strtoupper($code);
+    if ($rt['kind'] === 'id') {
+        $ct = app_coupon_table(); list($cr, , ) = $ct ? app_select($ct, array('code' => 'eq.' . $val), 1, 0, false) : array(array(), null, null);
+        if (!$cr || !isset($cr[0]['id'])) { return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'total' => 0, 'items' => array())); }
+        $val = $cr[0]['id'];
+    }
+    $q = array($rt['link'] => 'eq.' . $val); if ($rt['when']) { $q['order'] = $rt['when'] . '.desc'; }
+    list($rows, $total, $x) = app_select($rt['table'], $q, (int) $limit, (int) $offset, true);
+    if (!$x['ok']) { return $r; }
+    $ids = array(); foreach ($rows as $w) { $ids[] = $w[$rt['user']]; }
+    $prof = array();
+    if ($ids) { $pt = app_profiles_table(); $idc = app_profile_idcol(); list($ps, , ) = app_select($pt, array($idc => 'in.(' . implode(',', array_unique($ids)) . ')'), count($ids) + 5, 0, false); foreach ($ps as $p) { $prof[$p[$idc]] = $p; } }
+    $items = array();
+    foreach ($rows as $w) {
+        $u = $w[$rt['user']]; $p = isset($prof[$u]) ? $prof[$u] : array();
+        $items[] = array('user_id' => $u, 'username' => g($p, 'username'), 'player_no' => g($p, 'player_no'), 'coins' => $rt['coins'] ? g($w, $rt['coins']) : null, 'redeemed_at' => $rt['when'] ? g($w, $rt['when']) : null);
+    }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'total' => $total !== null ? $total : count($items), 'items' => $items));
+}
 
 /* ---------- coin purchases (money spent) per player, read from the game's purchase table ---------- */
 /** Detect the purchase table + its money / coins / currency / status columns. null when none. */
@@ -835,7 +944,7 @@ function app_head($title, $sub) {
     $global = array('online' => 'Every player of the app: who is online right now (live) and who is offline.', 'cast' => 'Sent to every player of the app, not to one player.',
                     'legal' => 'One Privacy Policy and one Terms of Service for the whole app: a new version is shown to every player in the app.',
                     'rel' => 'One update for the whole app: every player on an older version sees the update screen.',
-                    'tour' => 'Tournaments are open to all players.', 'coupons' => 'Any new player can use a coupon code once.');
+                    'tour' => 'Tournaments are open to all players.', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
     echo '<link rel="stylesheet" href="/admin/assets/app.css?v=5"><script src="/admin/assets/app.js?v=5" defer></script>';
     echo '<div class="apptop"><div class="navgroups">';
     foreach ($groups as $gr) {
