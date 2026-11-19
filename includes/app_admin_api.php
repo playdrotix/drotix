@@ -3,10 +3,11 @@
  * DROTIX App admin API: the ONLY place that talks to the game backend (Supabase schema `drotix`).
  *
  * - Calls only the drotix.admin_* RPC functions (never tables, never SQL).
- * - Auth: the admin signs in with their own Supabase Auth account (email + password). Requests use the
- *   PUBLISHABLE / anon key + that user's access token, so the database checks drotix.profiles.is_admin.
- *   The service_role / secret key is NEVER used here.
- * - Tokens are kept in the PHP session (server side, httponly cookie); they never reach the browser.
+ * - Single login: once the website admin is logged in to /admin/, the SERVER signs in to Supabase
+ *   automatically with one app-admin account from includes/config.php ('app_admin' => email/password).
+ *   No second login screen. Requests use the PUBLISHABLE / anon key + that account's access token, so the
+ *   database still checks drotix.profiles.is_admin. The service_role / secret key is NEVER used here.
+ * - Credentials and tokens stay on the server (config.php + PHP session); they never reach the browser.
  *
  * Every RPC wrapper returns an AppResult:
  *   array('ok' => bool, 'data' => array|null, 'error' => string, 'forbidden' => bool)
@@ -23,6 +24,11 @@ function app_cfg() {
     $key = isset($c['anon_key']) ? (string) $c['anon_key'] : '';
     return array(rtrim((string) $url, '/'), $key);
 }
+/** Supabase app-admin account the server signs in with: array(email, password). */
+function app_cfg_account() {
+    $c = cfg('app_admin', array());
+    return array(isset($c['email']) ? (string) $c['email'] : '', isset($c['password']) ? (string) $c['password'] : '');
+}
 /** '' when OK, otherwise a message telling what to fix. Refuses secret / service_role keys. */
 function app_config_problem() {
     list($u, $k) = app_cfg();
@@ -30,6 +36,8 @@ function app_config_problem() {
     if ($k === '' || strpos($k, 'PASTE_') === 0) { return "Set 'app_admin' => array('anon_key' => 'sb_publishable_...') in includes/config.php (Supabase -> Project Settings -> API Keys -> Publishable key)."; }
     $kind = sb_key_kind($k);
     if (in_array($kind[0], array('secret', 'service_role'), true)) { return 'app_admin.anon_key must be the PUBLISHABLE / anon key, never the secret or service_role key.'; }
+    list($em, $pw) = app_cfg_account();
+    if ($em === '' || $pw === '' || strpos($pw, 'PASTE_') === 0) { return "Set 'app_admin' => array('email' => ..., 'password' => ...) in includes/config.php: a Supabase account that is an app admin (drotix.profiles.is_admin = true)."; }
     return '';
 }
 
@@ -73,41 +81,41 @@ function app_session_store($d) {
         'email' => isset($d['user']['email']) ? (string) $d['user']['email'] : '',
     );
 }
-/** Returns '' on success or an error message. Also checks the account is an app admin. */
-function app_sign_in($email, $password) {
+$GLOBALS['__app_auth_error'] = '';
+/** Server-side sign-in with the configured app-admin account. Returns '' on success or an error message. */
+function app_auto_sign_in() {
     if (($p = app_config_problem()) !== '') { return $p; }
+    list($email, $password) = app_cfg_account();
     list($st, $d, $err) = app_http('POST', '/auth/v1/token?grant_type=password', array('email' => $email, 'password' => $password));
-    if ($st !== 200 || empty($d['access_token'])) { return $err !== '' ? $err : 'Sign-in failed.'; }
+    if ($st !== 200 || empty($d['access_token'])) { return 'Supabase sign-in for the app-admin account failed: ' . ($err !== '' ? $err : 'HTTP ' . $st) . '. Check app_admin email/password in includes/config.php.'; }
     app_session_store($d);
-    $r = app_rpc('admin_dashboard');
-    if (!$r['ok']) {
-        $msg = $r['forbidden'] ? 'This account is not an app admin (drotix.profiles.is_admin is false).' : $r['error'];
-        app_sign_out();
-        return $msg;
-    }
     return '';
 }
-function app_sign_out() {
-    if (!empty($_SESSION['app']['access_token'])) { app_http('POST', '/auth/v1/logout', array(), $_SESSION['app']['access_token']); }
-    unset($_SESSION['app']);
-}
-function app_signed_in() { return !empty($_SESSION['app']['access_token']); }
 function app_me() { return isset($_SESSION['app']) ? $_SESSION['app'] : array('email' => '', 'user_id' => ''); }
-/** Valid access token (refreshed when it is about to expire) or null. */
+/** Valid access token: reuses / refreshes the session token, or signs in automatically. null on failure. */
 function app_token() {
-    if (!app_signed_in()) { return null; }
-    if ($_SESSION['app']['expires_at'] - 60 > time()) { return $_SESSION['app']['access_token']; }
-    list($st, $d, ) = app_http('POST', '/auth/v1/token?grant_type=refresh_token', array('refresh_token' => $_SESSION['app']['refresh_token']));
-    if ($st === 200 && !empty($d['access_token'])) { app_session_store($d); return $_SESSION['app']['access_token']; }
-    unset($_SESSION['app']);
+    if (!empty($_SESSION['app']['access_token'])) {
+        if ($_SESSION['app']['expires_at'] - 60 > time()) { return $_SESSION['app']['access_token']; }
+        list($st, $d, ) = app_http('POST', '/auth/v1/token?grant_type=refresh_token', array('refresh_token' => $_SESSION['app']['refresh_token']));
+        if ($st === 200 && !empty($d['access_token'])) { app_session_store($d); return $_SESSION['app']['access_token']; }
+        unset($_SESSION['app']);
+    }
+    $err = app_auto_sign_in();
+    if ($err === '') { return $_SESSION['app']['access_token']; }
+    $GLOBALS['__app_auth_error'] = $err;
     return null;
 }
-/** Page guard: website admin login + App (Supabase) sign-in. */
+/** Page guard: only the normal website admin login. The Supabase connection is made automatically. */
 function app_require() {
     admin_require_login();
     if (app_token() === null) {
-        $next = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/admin/app/';
-        redirect('/admin/app/login/?next=' . rawurlencode($next));
+        app_head('Mobile App', 'users');
+        echo '<div class="flash err"><b>The Mobile App section is not connected yet.</b> ' . e($GLOBALS['__app_auth_error']) . '</div>';
+        echo '<div class="panel"><p style="margin-top:0">Add this inside <code>return array(</code> in <code>includes/config.php</code> on the server:</p><pre class="msg">'
+            . e("'app_admin' => array(\n    'anon_key' => 'sb_publishable_...',   // Supabase -> Project Settings -> API Keys -> Publishable key\n    'email'    => 'admin@playdrotix.in', // a Supabase account that is an app admin\n    'password' => '...',\n),")
+            . '</pre></div>';
+        admin_foot();
+        exit;
     }
 }
 
@@ -117,9 +125,17 @@ function app_rpc($fn, $params = array()) {
     $out = array('ok' => false, 'data' => null, 'error' => '', 'forbidden' => false);
     if (!preg_match('/^admin_[a-z_]+$/', $fn)) { $out['error'] = 'Invalid function'; return $out; }
     $tok = app_token();
-    if ($tok === null) { $out['error'] = 'Not signed in to App admin.'; return $out; }
+    if ($tok === null) { $out['error'] = $GLOBALS['__app_auth_error'] !== '' ? $GLOBALS['__app_auth_error'] : 'Not connected to the app backend.'; return $out; }
     list($st, $d, $err) = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, $tok,
         array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA));
+    if ($st === 401) {   // token revoked/expired early: sign in again once and retry
+        unset($_SESSION['app']);
+        $tok = app_token();
+        if ($tok !== null) {
+            list($st, $d, $err) = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, $tok,
+                array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA));
+        }
+    }
     if ($st >= 200 && $st < 300) {
         if (is_array($d) && isset($d['status']) && $d['status'] === 'error') {
             $out['error'] = isset($d['message']) ? (string) $d['message'] : 'Error';
@@ -240,11 +256,11 @@ function app_text($v) {
 /** Flash an RPC result after an action. */
 function app_flash_result($r, $okMsg) {
     if ($r['ok']) { flash_set('ok', $okMsg); }
-    else { flash_set('err', ($r['forbidden'] ? 'Forbidden: your account is not an app admin. ' : '') . $r['error']); }
+    else { flash_set('err', ($r['forbidden'] ? 'Forbidden: the app_admin account in config.php is not an app admin. ' : '') . $r['error']); }
 }
 function app_error_box($r) {
     if ($r['ok']) { return ''; }
-    return '<div class="flash err">' . ($r['forbidden'] ? '<b>Not allowed.</b> This Supabase account is not an app admin. ' : '') . e($r['error']) . '</div>';
+    return '<div class="flash err">' . ($r['forbidden'] ? '<b>Not allowed.</b> The app_admin account in includes/config.php is not an app admin (drotix.profiles.is_admin). ' : '') . e($r['error']) . '</div>';
 }
 function app_post($k, $max = 2000) { return clean_str(isset($_POST[$k]) ? $_POST[$k] : '', $max); }
 function app_get($k, $max = 200) { return clean_str(isset($_GET[$k]) ? $_GET[$k] : '', $max); }
@@ -269,12 +285,11 @@ function app_local_to_iso($v) {
 function app_head($title, $sub) {
     header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; form-action 'self'; frame-ancestors 'none'", true);
     admin_head($title, 'app');
-    $tabs = array('dash' => array('/admin/app/', 'Dashboard'), 'users' => array('/admin/app/users/', 'Users'), 'reports' => array('/admin/app/reports/', 'Reports'),
+    $tabs = array('users' => array('/admin/app/users/', 'Users'), 'dash' => array('/admin/app/', 'Stats'), 'reports' => array('/admin/app/reports/', 'Reports'),
                   'appeals' => array('/admin/app/appeals/', 'Appeals'), 'tour' => array('/admin/app/tournaments/', 'Tournaments'),
                   'cast' => array('/admin/app/broadcast/', 'Broadcast'), 'audit' => array('/admin/app/audit/', 'Audit log'));
     echo '<link rel="stylesheet" href="/admin/assets/app.css?v=1"><script src="/admin/assets/app.js?v=1" defer></script>';
     echo '<div class="apptop"><nav class="subnav">';
     foreach ($tabs as $k => $t) { echo '<a href="' . $t[0] . '"' . ($k === $sub ? ' class="on"' : '') . '>' . e($t[1]) . '</a>'; }
-    $me = app_me();
-    echo '</nav><form method="post" action="/admin/app/login/" class="appme">' . csrf_field() . '<input type="hidden" name="action" value="signout"><span class="muted">' . e($me['email']) . '</span><button class="btn ghost sm" type="submit">Sign out of App</button></form></div>';
+    echo '</nav></div>';
 }

@@ -5,7 +5,7 @@ app_require();
 
 $r = app_dashboard();
 $d = $r['ok'] ? $r['data'] : array();
-app_head('App dashboard', 'dash');
+app_head('Mobile App stats', 'dash');
 
 echo '<div class="row"><a class="btn ghost sm" href="/admin/app/">Refresh</a><span class="muted">Auto-refreshes every 60 s &middot; updated ' . e(date('H:i:s')) . '</span></div>';
 echo '<div data-autorefresh="60"></div>';

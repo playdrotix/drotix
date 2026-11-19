@@ -129,16 +129,19 @@ only in the same browser. Browsers with Do Not Track on are not counted and get 
 * Admin -> **Setup check** tests the key, every table/column, write access and whether messages carry a visitor ID.
 * Messages sent before v3 have no visitor ID and can only be answered by email. Test with a NEW message.
 
-## App section (/admin/app/): manage the DROTIX mobile game
-Players, matches, coins, tournaments, reports, appeals, broadcast and audit, through the
-`drotix.admin_*` RPC functions only (no tables, no SQL). All calls live in `includes/app_admin_api.php`.
+## Mobile App section (/admin/app/): manage the DROTIX mobile game
+Sidebar -> **Mobile App**: all registered app players; click a player to see everything about them
+(matches, coins, tournaments, logins, chat, reports, audit) and act on them. Also Stats, Reports,
+Appeals, Tournaments, Broadcast and Audit log. Uses only the `drotix.admin_*` RPC functions
+(no tables, no SQL). All calls live in `includes/app_admin_api.php`.
 
-Setup (once): add this to `includes/config.php` (the PUBLISHABLE key, never the secret key):
+Single login: after the normal /admin/ login there is NO second login. The server connects to Supabase
+by itself with one app-admin account. Setup (once), add to `includes/config.php` on the server:
 
     'app_admin' => array(
-        'anon_key' => 'sb_publishable_...',   // Supabase -> Project Settings -> API Keys -> Publishable key
+        'anon_key' => 'sb_publishable_...',   // Supabase -> Project Settings -> API Keys -> Publishable key (NOT the secret key)
+        'email'    => 'admin@playdrotix.in',  // a Supabase Auth account of the app with drotix.profiles.is_admin = true
+        'password' => '...',
     ),
 
-Sign in: log in to /admin/ as usual, open **App (game)** and sign in with your Supabase account
-(the same email you use in the app). Only accounts with `drotix.profiles.is_admin = true` get in.
-The Supabase session is kept in the PHP session on the server; it never reaches the browser.
+The password and the Supabase session stay on the server; they never reach the browser.

@@ -90,7 +90,7 @@ if ($id === '') {
     $items = app_items($r);
     $total = $r['ok'] ? (int) g($r['data'], 'total', 0) : null;
 
-    app_head('App users', 'users');
+    app_head('Mobile App users', 'users');
     echo '<form class="row" method="get"><input name="q" value="' . e($q) . '" placeholder="Username, email, player no or user id" style="min-width:280px"><select name="status"><option value="">All statuses</option>';
     foreach (array('active' => 'Active', 'suspended' => 'Suspended', 'under_review' => 'Under review') as $k => $v) { echo '<option value="' . $k . '"' . ($st === $k ? ' selected' : '') . '>' . $v . '</option>'; }
     echo '</select><button class="btn sm" type="submit">Search</button>' . ($q !== '' || $st !== '' ? '<a class="btn ghost sm" href="/admin/app/users/">Clear</a>' : '');
@@ -137,7 +137,7 @@ $balance = g($u, 'wallet.balance_minor');
 $me = app_me();
 $isMe = $me['user_id'] !== '' && $me['user_id'] === $id;
 
-app_head('Player', 'users');
+app_head('Mobile App user', 'users');
 echo '<div class="row"><a class="btn ghost sm" href="/admin/app/users/">&larr; All players</a></div>';
 if (!$ur['ok']) { echo app_error_box($ur); admin_foot(); exit; }
 

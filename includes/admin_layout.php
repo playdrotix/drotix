@@ -83,7 +83,7 @@ function admin_head($title, $active) {
         'wait' => array('/admin/waitlist/', 'Waitlist'),
         'tour' => array('/admin/tournament/', 'Tournament sign-ups'),
         'vis' => array('/admin/visitors/', 'Site visitors'),
-        'app' => array('/admin/app/', 'App (game)'),
+        'app' => array('/admin/app/users/', 'Mobile App'),
         'exp' => array('/admin/explorer/', 'Data Explorer'),
         'chk' => array('/admin/health/', 'Setup check'),
     );
