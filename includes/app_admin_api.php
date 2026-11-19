@@ -251,6 +251,141 @@ function app_auth_search_email($needle, $max = 50) {
     return $found;
 }
 
+/* ================= legal documents + app releases (game functions) ================= */
+/** {status, privacy: Doc|null, terms: Doc|null}  Doc = {id, doc_type, version, title, sections:[{heading, body}], contact_website, contact_email, summary, requires_acceptance, published_at} */
+function app_get_legal_documents() { return app_rpc('get_legal_documents'); }
+/** {status, versions: [Doc + accepted_count], players_total} */
+function app_list_legal() { return app_rpc('admin_list_legal'); }
+/** -> {status, id, version}. $sections = array(array('heading' => ..., 'body' => ...), ...) */
+function app_publish_legal($type, $title, $sections, $website, $email, $summary, $requiresAcceptance) {
+    return app_rpc('admin_publish_legal', array('p_doc_type' => $type, 'p_title' => $title, 'p_sections' => $sections,
+        'p_contact_website' => $website !== '' ? $website : null, 'p_contact_email' => $email !== '' ? $email : null,
+        'p_summary' => $summary !== '' ? $summary : null, 'p_requires_acceptance' => (bool) $requiresAcceptance));
+}
+/** {status, items: [{id, platform, version_name, version_code, min_supported_version_code, update_available, apk_url, apk_sha256, apk_size_bytes, ios_app_store_url, release_notes[], published_at}]} */
+function app_list_app_releases($limit = 30) { return app_rpc('admin_list_app_releases', array('p_limit' => (int) $limit)); }
+/** -> {status, id} | {status:'error', message} */
+function app_publish_app_release($a) {
+    return app_rpc('admin_publish_app_release', array(
+        'p_version_name' => $a['version_name'], 'p_version_code' => (int) $a['version_code'], 'p_min_supported_version_code' => (int) $a['min_supported'],
+        'p_apk_url' => $a['apk_url'] !== '' ? $a['apk_url'] : null, 'p_apk_sha256' => $a['apk_sha256'] !== '' ? $a['apk_sha256'] : null,
+        'p_apk_size_bytes' => $a['apk_size'] !== '' ? (int) $a['apk_size'] : null, 'p_release_notes' => $a['notes'],
+        'p_platform' => $a['platform'], 'p_ios_app_store_url' => $a['ios_url'] !== '' ? $a['ios_url'] : null, 'p_update_available' => (bool) $a['update_available']));
+}
+/* ---------- coupons ----------
+ * Coupon = {code, coins, max_uses|null, used_count, starts_at|null, expires_at|null, active, note|null, created_at, updated_at,
+ *           state: 'live'|'scheduled'|'expired'|'used_up'|'disabled'} */
+/** {status, total_coins_given, items: [Coupon]} */
+function app_list_coupons($search) { return app_rpc('admin_list_coupons', array('p_search' => $search !== '' ? $search : null)); }
+/** Create or edit (same code). -> {status, created: bool, coupon: Coupon} | {status:'error', message} */
+function app_save_coupon($code, $coins, $maxUses, $startsAt, $expiresAt, $note, $active) {
+    return app_rpc('admin_save_coupon', array('p_code' => strtoupper($code), 'p_coins' => (int) $coins, 'p_max_uses' => $maxUses === null ? null : (int) $maxUses,
+        'p_starts_at' => $startsAt, 'p_expires_at' => $expiresAt, 'p_note' => $note !== '' ? $note : null, 'p_active' => (bool) $active));
+}
+/** -> {status, coupon} */
+function app_set_coupon_active($code, $active) { return app_rpc('admin_set_coupon_active', array('p_code' => $code, 'p_active' => (bool) $active)); }
+/** -> {status, total, items: [{user_id, username, player_no, coins, redeemed_at}]} */
+function app_coupon_redemptions($code, $limit = 100, $offset = 0) { return app_rpc('admin_coupon_redemptions', array('p_code' => $code, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset)); }
+
+/* ---------- coin purchases (money spent) per player, read from the game's purchase table ---------- */
+/** Detect the purchase table + its money / coins / currency / status columns. null when none. */
+function app_purchase_source() {
+    static $src = false;
+    if ($src !== false) { return $src; }
+    $src = null;
+    $moneyCols = array('amount_paid_minor', 'price_minor', 'price_paise', 'amount_minor', 'paid_minor', 'revenue_minor', 'price_amount_micros', 'price_micros', 'amount_micros', 'amount_paid', 'price', 'amount', 'amount_inr', 'paid_amount', 'price_inr');
+    foreach (app_tables() as $t => $i) {
+        if (!preg_match('/(purchase|iap|order|payment|billing)/', $t)) { continue; }
+        $uc = app_owner_col($t); if (!$uc) { continue; }
+        $money = null; foreach ($moneyCols as $c) { if (isset($i['cols'][$c])) { $money = $c; break; } }
+        $coins = null; foreach (array('coins', 'coins_granted', 'coin_amount', 'amount_coins', 'coins_minor', 'granted_coins') as $c) { if (isset($i['cols'][$c])) { $coins = $c; break; } }
+        if (!$money && !$coins) { continue; }
+        $cur = null; foreach (array('currency', 'currency_code', 'price_currency_code', 'price_currency') as $c) { if (isset($i['cols'][$c])) { $cur = $c; break; } }
+        $when = null; foreach (array('purchased_at', 'created_at', 'paid_at', 'granted_at') as $c) { if (isset($i['cols'][$c])) { $when = $c; break; } }
+        $prod = null; foreach (array('product_id', 'sku', 'product', 'pack_id', 'item_id') as $c) { if (isset($i['cols'][$c])) { $prod = $c; break; } }
+        $src = array('table' => $t, 'user' => $uc, 'money' => $money, 'coins' => $coins, 'currency' => $cur, 'when' => $when, 'product' => $prod, 'status' => isset($i['cols']['status']) ? 'status' : null);
+        break;
+    }
+    return $src;
+}
+/** Money value of one purchase in major units (e.g. 49.00), from the column's naming. */
+function app_money_value($col, $v) {
+    if (!is_numeric($v)) { return 0.0; }
+    if (preg_match('/micros/', $col)) { return $v / 1000000; }
+    if (preg_match('/(_minor|paise)$/', $col)) { return $v / 100; }
+    return (float) $v;
+}
+function app_purchase_ok($row, $src) {
+    if (!$src || !$src['status']) { return true; }
+    return !preg_match('/(refund|fail|cancel|pending|revok|void|chargeback)/i', (string) g($row, $src['status'], ''));
+}
+/**
+ * Purchases of many players: array('source' => src|null, 'by' => array(user_id => array(count, money, coins, currency, last_at)),
+ *  'totals' => array(buyers, count, money, coins, currency), 'note' => text)
+ * Falls back to coin transactions with reason iap_grant (coins only) when no purchase table exists.
+ */
+function app_purchase_stats($userIds) {
+    $ids = array_values(array_unique(array_filter($userIds, 'uuid_ok')));
+    $by = array(); $tot = array('buyers' => 0, 'count' => 0, 'money' => 0.0, 'coins' => 0, 'currency' => '');
+    $src = app_purchase_source(); $note = '';
+    $add = function ($uid, $money, $coins, $cur, $at) use (&$by, &$tot) {
+        if (!isset($by[$uid])) { $by[$uid] = array('count' => 0, 'money' => 0.0, 'coins' => 0, 'currency' => $cur, 'last_at' => null); $tot['buyers']++; }
+        $by[$uid]['count']++; $by[$uid]['money'] += $money; $by[$uid]['coins'] += $coins;
+        if ($at && (!$by[$uid]['last_at'] || strcmp($at, $by[$uid]['last_at']) > 0)) { $by[$uid]['last_at'] = $at; }
+        $tot['count']++; $tot['money'] += $money; $tot['coins'] += $coins; if ($cur && !$tot['currency']) { $tot['currency'] = $cur; }
+    };
+    if ($src) {
+        foreach (array_chunk($ids, 150) as $ch) {
+            list($rows, , ) = app_select($src['table'], array($src['user'] => 'in.(' . implode(',', $ch) . ')'), 10000, 0, false);
+            foreach ($rows as $r) {
+                if (!app_purchase_ok($r, $src)) { continue; }
+                $add($r[$src['user']], $src['money'] ? app_money_value($src['money'], g($r, $src['money'])) : 0, $src['coins'] ? (int) g($r, $src['coins'], 0) : 0,
+                     $src['currency'] ? (string) g($r, $src['currency'], '') : '', $src['when'] ? g($r, $src['when']) : null);
+            }
+        }
+        if (!$src['money']) { $note = 'The purchase table has no price column, so only coins are shown.'; }
+    } else {
+        $tt = app_tx_table(); $oc = $tt ? app_owner_col($tt) : null;
+        if ($tt && $oc && array_key_exists('reason', app_cols($tt))) {
+            foreach (array_chunk($ids, 150) as $ch) {
+                list($rows, , ) = app_select($tt, array($oc => 'in.(' . implode(',', $ch) . ')', 'reason' => 'eq.iap_grant'), 10000, 0, false);
+                foreach ($rows as $r) { $add($r[$oc], 0, (int) g($r, 'amount_minor', 0), '', g($r, 'created_at')); }
+            }
+            $note = 'No purchase table with prices was found: showing coins bought (iap_grant), not money.';
+        } else { $note = 'No purchase data found.'; }
+    }
+    return array('source' => $src, 'by' => $by, 'totals' => $tot, 'note' => $note);
+}
+/** Purchase history rows of one player (newest first). array(src|null, rows) */
+function app_purchase_history($uid) {
+    $src = app_purchase_source();
+    if ($src) {
+        $q = array($src['user'] => 'eq.' . $uid); if ($src['when']) { $q['order'] = $src['when'] . '.desc'; }
+        list($rows, , ) = app_select($src['table'], $q, 500, 0, false);
+        return array($src, $rows);
+    }
+    $tt = app_tx_table(); $oc = $tt ? app_owner_col($tt) : null;
+    if (!$tt || !$oc) { return array(null, array()); }
+    list($rows, , ) = app_select($tt, array($oc => 'eq.' . $uid, 'reason' => 'eq.iap_grant', 'order' => 'created_at.desc'), 500, 0, false);
+    return array(null, $rows);
+}
+function app_money($v, $cur) {
+    $sym = array('INR' => "\u{20B9}", 'USD' => '$', 'EUR' => "\u{20AC}", 'GBP' => "\u{00A3}");
+    $c = strtoupper((string) $cur);
+    return (isset($sym[$c]) ? $sym[$c] : ($c !== '' ? $c . ' ' : "\u{20B9}")) . number_format((float) $v, 2);
+}
+
+const APP_UPDATES_BUCKET = 'drotix-app-updates';
+/** One-time signed upload URL (browser uploads the APK straight to Storage; no key in the browser). array(uploadUrl, publicUrl, error) */
+function app_signed_upload($path) {
+    $enc = implode('/', array_map('rawurlencode', explode('/', $path)));
+    $r = app_http('POST', '/storage/v1/object/upload/sign/' . APP_UPDATES_BUCKET . '/' . $enc, (object) array(), array('x-upsert' => 'true'));
+    list($base, ) = app_base();
+    $u = (string) gx($r['data'], array('url', 'signedURL'), '');
+    if (!$r['ok'] || $u === '') { return array('', '', $r['error'] !== '' ? $r['error'] : 'Could not create the upload link (does the bucket ' . APP_UPDATES_BUCKET . ' exist?)'); }
+    return array($base . '/storage/v1' . (strpos($u, '/') === 0 ? '' : '/') . $u, $base . '/storage/v1/object/public/' . APP_UPDATES_BUCKET . '/' . $enc, '');
+}
+
 /* ================= storage ================= */
 function app_evidence_url($path) {
     $path = ltrim((string) $path, '/');
@@ -423,7 +558,9 @@ function app_action_label($a) {
                'report_approve' => 'Report approved', 'report_reject' => 'Report rejected', 'report_review' => 'Report under review', 'report_suspend' => 'Suspended from report', 'update_report' => 'Report status changed',
                'appeal_approved' => 'Appeal approved', 'appeal_rejected' => 'Appeal rejected', 'review_appeal' => 'Appeal reviewed', 'appeal_suspend' => 'Suspended (appeal)',
                'tournament_create' => 'Created tournament', 'create_tournament' => 'Created tournament', 'tournament_start' => 'Started tournament', 'generate_bracket' => 'Started tournament',
-               'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row');
+               'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row',
+               'publish_legal' => 'Published legal document', 'publish_app_release' => 'Published app release',
+               'create_coupon' => 'Created coupon', 'edit_coupon' => 'Edited coupon', 'enable_coupon' => 'Enabled coupon', 'disable_coupon' => 'Disabled coupon');
     return isset($m[$a]) ? $m[$a] : ucfirst(str_replace('_', ' ', $a));
 }
 /** Error text for a failed game function, with the fix when no app admin exists. */
@@ -528,11 +665,13 @@ function app_require() {
 }
 /** Header for Mobile App pages: CSP allowing avatar images, sidebar, sub navigation. */
 function app_head($title, $sub) {
-    header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; form-action 'self'; frame-ancestors 'none'", true);
+    list($sbUrl, ) = app_base();
+    $origin = preg_match('~^https://[^/]+~', $sbUrl, $m) ? ' ' . $m[0] : '';
+    header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'" . $origin . "; form-action 'self'; frame-ancestors 'none'", true);
     admin_head($title, 'app');
     $tabs = array('users' => array('/admin/app/users/', 'Players'), 'online' => array('/admin/app/online/', 'Online now'), 'tour' => array('/admin/app/tournaments/', 'Tournaments'),
                   'reports' => array('/admin/app/reports/', 'Reports'), 'appeals' => array('/admin/app/appeals/', 'Appeals'),
-                  'cast' => array('/admin/app/broadcast/', 'Broadcast'), 'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'));
+                  'cast' => array('/admin/app/broadcast/', 'Broadcast'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'legal' => array('/admin/app/legal/', 'Legal'), 'rel' => array('/admin/app/releases/', 'App releases'), 'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'));
     $tabs['audit'] = array('/admin/app/audit/', 'Audit log');
     echo '<link rel="stylesheet" href="/admin/assets/app.css?v=4"><script src="/admin/assets/app.js?v=4" defer></script>';
     echo '<div class="apptop"><nav class="subnav">';
