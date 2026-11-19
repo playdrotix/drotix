@@ -1,18 +1,18 @@
 <?php
-/* App admin: audit log of all admin actions on the game. */
+/* Mobile App: audit log of every change made from this section (stored in the website audit table). */
 require __DIR__ . '/../../../includes/app_admin_api.php';
 app_require();
 
 $page = max(1, (int) (isset($_GET['page']) ? $_GET['page'] : 1)); $per = 50;
-$r = app_list_audit(null, $per, ($page - 1) * $per);
-$items = app_items($r);
-app_head('App audit log', 'audit');
-echo app_error_box($r);
-echo '<div class="tbl-wrap"><table><tr><th>When</th><th>Action</th><th>Admin</th><th>Target</th><th>Details</th></tr>';
-foreach ($items as $a) {
-    echo '<tr><td class="nowrap">' . app_dt(g($a, 'created_at')) . '</td><td>' . app_badge(g($a, 'action')) . '</td><td>' . app_text(g($a, 'admin_username')) . '</td>';
-    echo '<td>' . app_user_link(gx($a, array('target_user_id', 'target_id')), g($a, 'target_username')) . '</td><td>' . app_text(g($a, 'details')) . '</td></tr>';
+list($rows, $total, $r) = sb_select(tbl('audit'), array('action' => 'like.app_*', 'order' => 'created_at.desc'), $per, ($page - 1) * $per);
+app_head('Mobile App audit log', 'audit');
+if (!sb_ok($r)) { echo '<div class="flash err">' . e($r['error']) . '</div>'; }
+echo '<div class="tbl-wrap"><table><tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr>';
+foreach ($rows as $a) {
+    $target = (string) g($a, 'target', '');
+    $tgt = uuid_ok($target) ? app_user_link($target, substr($target, 0, 8)) : e($target);
+    echo '<tr><td class="nowrap">' . app_dt(g($a, 'created_at')) . '</td><td>' . e(g($a, 'admin_user', '-')) . '</td><td>' . app_badge(substr((string) g($a, 'action', ''), 4)) . '</td><td>' . $tgt . '</td><td class="chat">' . e(g($a, 'details', '')) . '</td></tr>';
 }
-if (!$items) { echo '<tr><td colspan="5" class="muted">' . ($r['ok'] ? 'No admin actions yet.' : 'Could not load the audit log.') . '</td></tr>'; }
-echo '</table></div>' . app_pager_simple($page, count($items), $per);
+if (!$rows) { echo '<tr><td colspan="5" class="muted">No changes yet.</td></tr>'; }
+echo '</table></div>' . pager($page, $total, $per);
 admin_foot();

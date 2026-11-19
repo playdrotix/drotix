@@ -1,220 +1,283 @@
 <?php
 /*
- * DROTIX App admin API: the ONLY place that talks to the game backend (Supabase schema `drotix`).
+ * DROTIX Mobile App admin: server-side access to the game data (Supabase schema `drotix` + Supabase Auth).
  *
- * - Calls only the drotix.admin_* RPC functions (never tables, never SQL).
- * - Single login: once the website admin is logged in to /admin/, the SERVER signs in to Supabase
- *   automatically with one app-admin account from includes/app_config.php (email/password).
- *   No second login screen. Requests use the PUBLISHABLE / anon key + that account's access token, so the
- *   database still checks drotix.profiles.is_admin. The service_role / secret key is NEVER used here.
- * - Credentials and tokens stay on the server (app_config.php + PHP session); they never reach the browser.
- *
- * Every RPC wrapper returns an AppResult:
- *   array('ok' => bool, 'data' => array|null, 'error' => string, 'forbidden' => bool)
+ * - ONE login only: whoever is logged in to /admin/ can see and manage everything here. No Supabase sign-in.
+ * - Uses the Supabase SERVICE (secret) key, server side only (PHP). It never reaches the browser.
+ *   Key + URL come from includes/app_config.php (falls back to supabase_url / supabase_key in includes/config.php).
+ * - Tables and columns are discovered automatically from the database (PostgREST OpenAPI), so the panel
+ *   follows the real schema without hard-coding it.
+ * - Every change is written to the website audit log (action names start with "app_").
  */
 require_once __DIR__ . '/admin_layout.php';
 
 const APP_SCHEMA = 'drotix';
 const APP_EVIDENCE_BUCKET = 'drotix-report-evidence';
+$GLOBALS['__app_schema'] = null;
 
-/* ---------------- config ----------------
- * Mobile app connection lives in its OWN file: includes/app_config.php (copy of app_config.sample.php).
- * (Fallback: an 'app_admin' block inside includes/config.php.) */
+/* ================= config ================= */
 function app_conf() {
     static $c = null;
     if ($c === null) {
         $f = __DIR__ . '/app_config.php';
-        $c = is_file($f) ? require $f : cfg('app_admin', array());
+        $c = is_file($f) ? require $f : array();
         if (!is_array($c)) { $c = array(); }
     }
     return $c;
 }
-function app_cfg() {
+/** array(url, service_key) */
+function app_base() {
     $c = app_conf();
     $url = !empty($c['supabase_url']) ? $c['supabase_url'] : cfg('supabase_url', '');
-    $key = isset($c['anon_key']) ? (string) $c['anon_key'] : '';
-    return array(rtrim((string) $url, '/'), $key);
+    $key = (!empty($c['service_key']) && strpos($c['service_key'], 'PASTE_') !== 0) ? $c['service_key'] : cfg('supabase_key', '');
+    return array(rtrim((string) $url, '/'), (string) $key);
 }
-/** Supabase app-admin account the server signs in with: array(email, password). */
-function app_cfg_account() {
-    $c = app_conf();
-    return array(isset($c['email']) ? (string) $c['email'] : '', isset($c['password']) ? (string) $c['password'] : '');
-}
-/** '' when OK, otherwise a message telling what to fix. Refuses secret / service_role keys. */
 function app_config_problem() {
-    list($u, $k) = app_cfg();
-    if ($u === '') { return 'Supabase URL is missing in includes/config.php.'; }
-    if (!is_file(__DIR__ . '/app_config.php') && !cfg('app_admin')) { return 'includes/app_config.php is missing. On the server copy includes/app_config.sample.php to includes/app_config.php and fill it in.'; }
-    if ($k === '' || strpos($k, 'PASTE_') === 0) { return "Fill 'anon_key' in includes/app_config.php (Supabase -> Project Settings -> API Keys -> Publishable key)."; }
+    list($u, $k) = app_base();
+    if ($u === '' || $k === '') { return 'Supabase URL / service key missing. Fill includes/app_config.php (or supabase_url / supabase_key in includes/config.php).'; }
     $kind = sb_key_kind($k);
-    if (in_array($kind[0], array('secret', 'service_role'), true)) { return "'anon_key' in includes/app_config.php must be the PUBLISHABLE / anon key, never the secret or service_role key."; }
-    list($em, $pw) = app_cfg_account();
-    if ($em === '' || $pw === '' || strpos($pw, 'PASTE_') === 0) { return "Fill 'email' and 'password' in includes/app_config.php: a Supabase account of the app that is an app admin (drotix.profiles.is_admin = true)."; }
+    if (!in_array($kind[0], array('secret', 'service_role'), true)) { return 'The key must be the SECRET / service_role key (Supabase -> Project Settings -> API Keys -> Secret key, starts with sb_secret_). Now: ' . $kind[2]; }
     return '';
 }
 
-/* ---------------- HTTP ---------------- */
-/** Returns array(status, data, error). $path starts with /rest/v1, /auth/v1 or /storage/v1. */
-function app_http($method, $path, $body = null, $token = null, $extraHeaders = array()) {
-    list($base, $key) = app_cfg();
+/* ================= HTTP ================= */
+function app_headers($extra = array(), $hasBody = false) {
+    list(, $key) = app_base();
     $h = array('apikey: ' . $key, 'Accept: application/json');
-    $h[] = 'Authorization: Bearer ' . ($token !== null ? $token : $key);
-    if ($body !== null) { $h[] = 'Content-Type: application/json'; }
-    foreach ($extraHeaders as $k => $v) { $h[] = $k . ': ' . $v; }
+    if (strpos($key, 'eyJ') === 0) { $h[] = 'Authorization: Bearer ' . $key; }
+    if ($hasBody) { $h[] = 'Content-Type: application/json'; }
+    foreach ($extra as $k => $v) { $h[] = $k . ': ' . $v; }
+    return $h;
+}
+function app_curl($method, $path, $body, $extra) {
+    list($base, ) = app_base();
     $ch = curl_init($base . $path);
+    $rh = array();
     curl_setopt_array($ch, array(
-        CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => $h,
+        CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_HTTPHEADER => app_headers($extra, $body !== null),
         CURLOPT_CONNECTTIMEOUT => 8, CURLOPT_TIMEOUT => 25, CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_HEADERFUNCTION => function ($c, $line) use (&$rh) { $p = explode(':', $line, 2); if (count($p) === 2) { $rh[strtolower(trim($p[0]))] = trim($p[1]); } return strlen($line); },
     ));
     if ($body !== null) { curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body)); }
-    $raw = curl_exec($ch);
-    $err = $raw === false ? curl_error($ch) : '';
-    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    $data = is_string($raw) ? json_decode($raw, true) : null;
+    return array($ch, function () use (&$rh) { return $rh; });
+}
+function app_parse($status, $raw, $curlErr) {
+    $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+    $err = $curlErr;
     if ($status >= 400 && $err === '') {
         if (is_array($data)) {
-            foreach (array('message', 'msg', 'error_description', 'error') as $f) {
-                if (!empty($data[$f]) && is_string($data[$f])) { $err = $data[$f]; break; }
-            }
+            foreach (array('message', 'msg', 'error_description', 'error') as $f) { if (!empty($data[$f]) && is_string($data[$f])) { $err = $data[$f]; break; } }
+            if (!empty($data['details']) && is_string($data['details'])) { $err .= ' (' . $data['details'] . ')'; }
         }
         if ($err === '') { $err = 'HTTP ' . $status; }
     }
-    return array($status, $data, $err);
+    return array($data, $err);
 }
-
-/* ---------------- auth (Supabase email + password) ---------------- */
-function app_session_store($d) {
-    $_SESSION['app'] = array(
-        'access_token' => (string) $d['access_token'],
-        'refresh_token' => (string) $d['refresh_token'],
-        'expires_at' => time() + (int) (isset($d['expires_in']) ? $d['expires_in'] : 3600),
-        'user_id' => isset($d['user']['id']) ? (string) $d['user']['id'] : '',
-        'email' => isset($d['user']['email']) ? (string) $d['user']['email'] : '',
-    );
+/** Returns array('ok', 'status', 'data', 'error', 'headers') */
+function app_http($method, $path, $body = null, $extra = array()) {
+    list($ch, $hdr) = app_curl($method, $path, $body, $extra);
+    $raw = curl_exec($ch);
+    $cerr = $raw === false ? curl_error($ch) : '';
+    $st = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    list($data, $err) = app_parse($st, $raw, $cerr);
+    return array('ok' => $st >= 200 && $st < 300 && $cerr === '', 'status' => $st, 'data' => $data, 'error' => $err, 'headers' => $hdr());
 }
-$GLOBALS['__app_auth_error'] = '';
-/** Server-side sign-in with the configured app-admin account. Returns '' on success or an error message. */
-function app_auto_sign_in() {
-    if (($p = app_config_problem()) !== '') { return $p; }
-    list($email, $password) = app_cfg_account();
-    list($st, $d, $err) = app_http('POST', '/auth/v1/token?grant_type=password', array('email' => $email, 'password' => $password));
-    if ($st !== 200 || empty($d['access_token'])) { return 'Supabase sign-in for the app-admin account failed: ' . ($err !== '' ? $err : 'HTTP ' . $st) . '. Check email/password in includes/app_config.php.'; }
-    app_session_store($d);
-    return '';
-}
-function app_me() { return isset($_SESSION['app']) ? $_SESSION['app'] : array('email' => '', 'user_id' => ''); }
-/** Valid access token: reuses / refreshes the session token, or signs in automatically. null on failure. */
-function app_token() {
-    if (!empty($_SESSION['app']['access_token'])) {
-        if ($_SESSION['app']['expires_at'] - 60 > time()) { return $_SESSION['app']['access_token']; }
-        list($st, $d, ) = app_http('POST', '/auth/v1/token?grant_type=refresh_token', array('refresh_token' => $_SESSION['app']['refresh_token']));
-        if ($st === 200 && !empty($d['access_token'])) { app_session_store($d); return $_SESSION['app']['access_token']; }
-        unset($_SESSION['app']);
+/** Parallel GETs: array(key => path) -> array(key => result) */
+function app_http_multi($paths) {
+    $mh = curl_multi_init(); $hs = array(); $out = array();
+    foreach ($paths as $k => $p) { list($ch, ) = app_curl('GET', $p, null, array()); curl_multi_add_handle($mh, $ch); $hs[$k] = $ch; }
+    do { $s = curl_multi_exec($mh, $run); if ($run) { curl_multi_select($mh, 1.0); } } while ($run && $s === CURLM_OK);
+    foreach ($hs as $k => $ch) {
+        $raw = curl_multi_getcontent($ch); $st = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        list($data, $err) = app_parse($st, $raw, '');
+        $out[$k] = array('ok' => $st >= 200 && $st < 300, 'status' => $st, 'data' => $data, 'error' => $err);
+        curl_multi_remove_handle($mh, $ch); curl_close($ch);
     }
-    $err = app_auto_sign_in();
-    if ($err === '') { return $_SESSION['app']['access_token']; }
-    $GLOBALS['__app_auth_error'] = $err;
-    return null;
-}
-/** Page guard: only the normal website admin login. The Supabase connection is made automatically. */
-function app_require() {
-    admin_require_login();
-    if (app_token() === null) {
-        app_head('Mobile App', 'users');
-        echo '<div class="flash err"><b>The Mobile App section is not connected yet.</b> ' . e($GLOBALS['__app_auth_error']) . '</div>';
-        echo '<div class="panel"><p style="margin-top:0">Open <code>includes/app_config.php</code> on the server (copy it from <code>includes/app_config.sample.php</code> if it does not exist) and fill in: <b>anon_key</b> (Publishable key), <b>email</b> and <b>password</b> of an app-admin account.</p></div>';
-        admin_foot();
-        exit;
-    }
-}
-
-/* ---------------- RPC ---------------- */
-/** @return array{ok:bool,data:?array,error:string,forbidden:bool} */
-function app_rpc($fn, $params = array()) {
-    $out = array('ok' => false, 'data' => null, 'error' => '', 'forbidden' => false);
-    if (!preg_match('/^admin_[a-z_]+$/', $fn)) { $out['error'] = 'Invalid function'; return $out; }
-    $tok = app_token();
-    if ($tok === null) { $out['error'] = $GLOBALS['__app_auth_error'] !== '' ? $GLOBALS['__app_auth_error'] : 'Not connected to the app backend.'; return $out; }
-    list($st, $d, $err) = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, $tok,
-        array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA));
-    if ($st === 401) {   // token revoked/expired early: sign in again once and retry
-        unset($_SESSION['app']);
-        $tok = app_token();
-        if ($tok !== null) {
-            list($st, $d, $err) = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, $tok,
-                array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA));
-        }
-    }
-    if ($st >= 200 && $st < 300) {
-        if (is_array($d) && isset($d['status']) && $d['status'] === 'error') {
-            $out['error'] = isset($d['message']) ? (string) $d['message'] : 'Error';
-        } else {
-            $out['ok'] = true;
-            $out['data'] = is_array($d) ? $d : array();
-            return $out;
-        }
-    } else {
-        $out['error'] = $err !== '' ? $err : 'Request failed';
-    }
-    $out['forbidden'] = stripos($out['error'], 'forbidden') !== false || $st === 401 || $st === 403;
+    curl_multi_close($mh);
     return $out;
 }
 
-/* ---------- typed wrappers (one per backend function) ---------- */
-function app_dashboard() { return app_rpc('admin_dashboard'); }
-function app_list_users($search, $status, $limit, $offset) {
-    return app_rpc('admin_list_users', array('p_search' => $search !== '' ? $search : null, 'p_status' => $status !== '' ? $status : null, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset));
+/* ================= database (schema drotix) ================= */
+function app_valid_ident($s) { return (bool) preg_match('/^[A-Za-z_][A-Za-z0-9_]{0,62}$/', (string) $s); }
+/** PostgREST request on a drotix table. $query = PostgREST params. Result + 'total' (when counted). */
+function app_db($method, $table, $query = array(), $body = null, $prefer = '') {
+    if (!app_valid_ident($table)) { return array('ok' => false, 'status' => 0, 'data' => null, 'error' => 'Invalid table', 'total' => null); }
+    $path = '/rest/v1/' . $table . ($query ? '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986) : '');
+    $h = array('Accept-Profile' => APP_SCHEMA, 'Content-Profile' => APP_SCHEMA);
+    if ($prefer !== '') { $h['Prefer'] = $prefer; }
+    $r = app_http($method, $path, $body, $h);
+    $r['total'] = null;
+    if (!empty($r['headers']['content-range']) && preg_match('~/(\d+)$~', $r['headers']['content-range'], $m)) { $r['total'] = (int) $m[1]; }
+    return $r;
 }
-function app_get_user($id) { return app_rpc('admin_get_user', array('p_user_id' => $id)); }
-function app_user_matches($id, $limit, $offset) { return app_rpc('admin_user_matches', array('p_user_id' => $id, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset)); }
-function app_user_tournaments($id) { return app_rpc('admin_user_tournaments', array('p_user_id' => $id)); }
-function app_user_transactions($id, $limit, $offset, $reason) {
-    return app_rpc('admin_user_transactions', array('p_user_id' => $id, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset, 'p_reason' => $reason !== '' ? $reason : null));
+/** array(rows, total, result) */
+function app_select($table, $query = array(), $limit = 25, $offset = 0, $count = true) {
+    $query['limit'] = (int) $limit; $query['offset'] = (int) $offset;
+    if (!isset($query['select'])) { $query['select'] = '*'; }
+    $r = app_db('GET', $table, $query, null, $count ? 'count=exact' : '');
+    return array(($r['ok'] && is_array($r['data'])) ? $r['data'] : array(), $r['total'], $r);
 }
-function app_user_logins($id, $limit) { return app_rpc('admin_user_logins', array('p_user_id' => $id, 'p_limit' => (int) $limit)); }
-function app_user_chat($id, $limit) { return app_rpc('admin_user_chat', array('p_user_id' => $id, 'p_limit' => (int) $limit)); }
-function app_user_reports($id) { return app_rpc('admin_user_reports', array('p_user_id' => $id)); }
-function app_list_reports($limit) { return app_rpc('admin_list_reports', array('p_limit' => (int) $limit)); }
-function app_list_appeals($limit) { return app_rpc('admin_list_appeals', array('p_limit' => (int) $limit)); }
-function app_list_tournaments($limit) { return app_rpc('admin_list_tournaments', array('p_limit' => (int) $limit)); }
-function app_list_audit($userId, $limit, $offset) { return app_rpc('admin_list_audit', array('p_user_id' => $userId, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset)); }
+function app_count($table, $query = array()) {
+    $query['select'] = '*';
+    list(, $t, $r) = app_select($table, $query, 1, 0, true);
+    return $r['ok'] ? $t : null;
+}
+/** Call a drotix RPC with the service key (some admin functions may refuse a service caller). */
+function app_rpc($fn, $params = array()) {
+    if (!app_valid_ident($fn)) { return array('ok' => false, 'data' => null, 'error' => 'Invalid function'); }
+    $r = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA));
+    if ($r['ok'] && is_array($r['data']) && isset($r['data']['status']) && $r['data']['status'] === 'error') {
+        $r['ok'] = false; $r['error'] = isset($r['data']['message']) ? (string) $r['data']['message'] : 'Error';
+    }
+    return $r;
+}
 
-function app_wallet_adjust($id, $amount, $direction, $note, $reference) {
-    return app_rpc('admin_wallet_adjust', array('p_user_id' => $id, 'p_amount' => (int) $amount, 'p_direction' => $direction, 'p_note' => $note, 'p_reference' => $reference !== '' ? $reference : null));
+/* ---------- schema discovery ---------- */
+/**
+ * array('ok', 'error', 'tables' => array(name => array('cols' => array(col => format), 'pk' => col|null)), 'rpc' => array(names))
+ * Cached in the PHP session for 10 minutes (?refresh_schema=1 to reload).
+ */
+function app_schema() {
+    if ($GLOBALS['__app_schema'] !== null) { return $GLOBALS['__app_schema']; }
+    $c = isset($_SESSION['app_schema']) ? $_SESSION['app_schema'] : null;
+    if (!$c || $c['at'] < time() - 600 || isset($_GET['refresh_schema'])) {
+        $r = app_http('GET', '/rest/v1/', null, array('Accept-Profile' => APP_SCHEMA, 'Accept' => 'application/openapi+json'));
+        $c = array('at' => time(), 'ok' => false, 'error' => $r['error'], 'tables' => array(), 'rpc' => array());
+        if ($r['ok'] && is_array($r['data'])) {
+            $c['ok'] = true;
+            foreach ((array) g($r['data'], 'definitions', array()) as $t => $def) {
+                $cols = array(); $pk = null;
+                foreach ((array) g($def, 'properties', array()) as $col => $p) {
+                    $cols[$col] = (string) gx($p, array('format', 'type'), 'text');
+                    if (strpos((string) g($p, 'description', ''), '<pk/>') !== false && $pk === null) { $pk = $col; }
+                }
+                if ($pk === null && isset($cols['id'])) { $pk = 'id'; }
+                $c['tables'][$t] = array('cols' => $cols, 'pk' => $pk);
+            }
+            ksort($c['tables']);
+            foreach (array_keys((array) g($r['data'], 'paths', array())) as $p) { if (strpos($p, '/rpc/') === 0) { $c['rpc'][] = substr($p, 5); } }
+        }
+        if ($c['ok']) { $_SESSION['app_schema'] = $c; }
+    }
+    return $GLOBALS['__app_schema'] = $c;
 }
-function app_suspend_user($id, $reason, $reportId, $notes) {
-    return app_rpc('admin_suspend_user', array('p_user_id' => $id, 'p_reason' => $reason, 'p_report_id' => $reportId !== '' ? $reportId : null, 'p_admin_notes' => $notes !== '' ? $notes : null));
+function app_tables() { $s = app_schema(); return $s['tables']; }
+function app_has_table($t) { $ts = app_tables(); return isset($ts[$t]); }
+function app_cols($t) { $ts = app_tables(); return isset($ts[$t]) ? $ts[$t]['cols'] : array(); }
+function app_pk($t) { $ts = app_tables(); return isset($ts[$t]) ? $ts[$t]['pk'] : null; }
+function app_has_rpc($fn) { $s = app_schema(); return in_array($fn, $s['rpc'], true); }
+/** First table that has ALL the given columns (optionally name must match a regex). */
+function app_find_table($needCols, $nameRe = null) {
+    foreach (app_tables() as $t => $info) {
+        if ($nameRe && !preg_match($nameRe, $t)) { continue; }
+        $ok = true;
+        foreach ($needCols as $c) { if (!isset($info['cols'][$c])) { $ok = false; break; } }
+        if ($ok) { return $t; }
+    }
+    return null;
 }
-function app_reinstate_user($id, $notes) { return app_rpc('admin_reinstate_user', array('p_user_id' => $id, 'p_notes' => $notes !== '' ? $notes : null)); }
-function app_update_user_profile($id, $username, $clearAvatar) {
-    return app_rpc('admin_update_user_profile', array('p_user_id' => $id, 'p_username' => $username !== '' ? $username : null, 'p_clear_avatar' => (bool) $clearAvatar));
+/** Columns of a table that point at a player (uuid columns named like user_id, player_x_id, reporter_id ...). */
+function app_user_cols($t) {
+    $out = array();
+    foreach (app_cols($t) as $c => $f) {
+        if ($f !== 'uuid') { continue; }
+        if (preg_match('/(^|_)(user|player|profile|owner|reporter|reported|sender|receiver|recipient|winner|loser|friend|referrer|referred|inviter|invitee|host|guest|challenger|opponent|created_by|admin|target|member|blocker|blocked)(_[a-z0-9]+)?(_id)?$/', $c)) { $out[] = $c; }
+    }
+    return $out;
 }
-function app_set_admin($id, $isAdmin) { return app_rpc('admin_set_admin', array('p_user_id' => $id, 'p_is_admin' => (bool) $isAdmin)); }
-function app_send_notification($userId, $title, $body) { return app_rpc('admin_send_notification', array('p_user_id' => $userId, 'p_title' => $title, 'p_body' => $body)); }
-function app_update_report($id, $status, $notes) { return app_rpc('admin_update_report', array('p_report_id' => $id, 'p_status' => $status, 'p_admin_notes' => $notes !== '' ? $notes : null)); }
-function app_review_appeal($id, $decision, $notes) { return app_rpc('admin_review_appeal', array('p_appeal_id' => $id, 'p_decision' => $decision, 'p_admin_notes' => $notes !== '' ? $notes : null)); }
-function app_create_tournament($name, $fee, $max, $closesAt, $startsAt, $moveSec, $joinSec) {
-    return app_rpc('admin_create_tournament', array('p_name' => $name, 'p_entry_fee' => (int) $fee, 'p_max_participants' => (int) $max,
-        'p_registration_closes_at' => $closesAt, 'p_starts_at' => $startsAt, 'p_move_timeout_sec' => (int) $moveSec, 'p_join_timeout_sec' => (int) $joinSec));
-}
-function app_generate_bracket($id) { return app_rpc('admin_generate_bracket', array('p_tournament_id' => $id)); }
+function app_profiles_table() { return app_has_table('profiles') ? 'profiles' : app_find_table(array('username'), '/profile|player|user/'); }
+/** Column in profiles that equals the auth user id. */
+function app_profile_idcol() { $t = app_profiles_table(); $c = app_cols($t); return isset($c['id']) ? 'id' : (isset($c['user_id']) ? 'user_id' : 'id'); }
+function app_wallet_table() { return app_find_table(array('balance_minor')); }
+function app_tx_table() { return app_find_table(array('amount_minor', 'direction')); }
+function app_owner_col($t) { $u = app_user_cols($t); foreach (array('user_id', 'player_id', 'profile_id', 'owner_id') as $c) { if (in_array($c, $u, true)) { return $c; } } return $u ? $u[0] : null; }
 
-/** Signed URL (5 min) for a report screenshot in the private bucket, or '' on error. */
+/* ================= Supabase Auth (admin API, service key) ================= */
+function app_auth_get($id) { return app_http('GET', '/auth/v1/admin/users/' . rawurlencode($id)); }
+/** Parallel fetch: array(id => user|null) */
+function app_auth_many($ids) {
+    $paths = array();
+    foreach (array_unique($ids) as $id) { if (uuid_ok($id)) { $paths[$id] = '/auth/v1/admin/users/' . rawurlencode($id); } }
+    $out = array();
+    foreach (app_http_multi($paths) as $id => $r) { $out[$id] = ($r['ok'] && is_array($r['data'])) ? $r['data'] : null; }
+    return $out;
+}
+function app_auth_list($page, $per) { return app_http('GET', '/auth/v1/admin/users?page=' . (int) $page . '&per_page=' . (int) $per); }
+function app_auth_update($id, $attrs) { return app_http('PUT', '/auth/v1/admin/users/' . rawurlencode($id), $attrs); }
+function app_auth_delete($id) { return app_http('DELETE', '/auth/v1/admin/users/' . rawurlencode($id)); }
+/** Find auth users whose email contains $needle (scans up to 10,000 accounts). array of user arrays */
+function app_auth_search_email($needle, $max = 50) {
+    $found = array(); $needle = strtolower($needle);
+    for ($p = 1; $p <= 10 && count($found) < $max; $p++) {
+        $r = app_auth_list($p, 1000);
+        $users = $r['ok'] ? (array) g($r['data'], 'users', array()) : array();
+        foreach ($users as $u) { if (strpos(strtolower((string) g($u, 'email', '')), $needle) !== false) { $found[] = $u; } }
+        if (count($users) < 1000) { break; }
+    }
+    return $found;
+}
+
+/* ================= storage ================= */
 function app_evidence_url($path) {
     $path = ltrim((string) $path, '/');
     if ($path === '' || strpos($path, '..') !== false) { return ''; }
-    $tok = app_token();
-    if ($tok === null) { return ''; }
     $enc = implode('/', array_map('rawurlencode', explode('/', $path)));
-    list($st, $d, ) = app_http('POST', '/storage/v1/object/sign/' . APP_EVIDENCE_BUCKET . '/' . $enc, array('expiresIn' => 300), $tok);
-    if ($st !== 200 || empty($d['signedURL'])) { return ''; }
-    list($base, ) = app_cfg();
-    return $base . '/storage/v1' . (strpos($d['signedURL'], '/') === 0 ? '' : '/') . $d['signedURL'];
+    $r = app_http('POST', '/storage/v1/object/sign/' . APP_EVIDENCE_BUCKET . '/' . $enc, array('expiresIn' => 300));
+    if (!$r['ok'] || empty($r['data']['signedURL'])) { return ''; }
+    list($base, ) = app_base();
+    return $base . '/storage/v1' . (strpos($r['data']['signedURL'], '/') === 0 ? '' : '/') . $r['data']['signedURL'];
 }
 
-/* ---------------- view helpers ---------------- */
-/** Null-safe nested get: g($arr, 'profile.username', '-') */
+/* ================= generic row editing ================= */
+function app_is_json_fmt($f) { return in_array($f, array('json', 'jsonb'), true) || substr($f, -2) === '[]' || strpos($f, 'ARRAY') !== false; }
+function app_is_int_fmt($f) { return in_array($f, array('integer', 'bigint', 'smallint'), true); }
+function app_is_num_fmt($f) { return app_is_int_fmt($f) || in_array($f, array('numeric', 'real', 'double precision', 'number'), true); }
+/** Form input for one column. */
+function app_input($col, $fmt, $val) {
+    $n = 'f[' . e($col) . ']';
+    if ($fmt === 'boolean') {
+        $o = '<select name="' . $n . '"><option value="__null"' . ($val === null ? ' selected' : '') . '>(null)</option><option value="true"' . ($val === true ? ' selected' : '') . '>true</option><option value="false"' . ($val === false ? ' selected' : '') . '>false</option></select>';
+        return $o;
+    }
+    if (app_is_json_fmt($fmt)) {
+        return '<textarea name="' . $n . '" rows="3">' . e($val === null ? '' : json_encode($val, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) . '</textarea>';
+    }
+    $type = app_is_num_fmt($fmt) ? 'text" inputmode="decimal' : 'text';
+    $v = is_array($val) ? json_encode($val) : (string) $val;
+    if (strlen($v) > 120) { return '<textarea name="' . $n . '" rows="3">' . e($v) . '</textarea>'; }
+    return '<input type="' . $type . '" name="' . $n . '" value="' . e($v) . '"' . ($val === null ? ' placeholder="(null)"' : '') . '>';
+}
+/** Raw form string -> typed value (or the string '__skip' when invalid JSON etc.). Empty = null. */
+function app_cast($fmt, $raw) {
+    $raw = is_string($raw) ? $raw : '';
+    if ($raw === '__null') { return null; }
+    if ($fmt === 'boolean') { return $raw === 'true' ? true : ($raw === 'false' ? false : null); }
+    if (trim($raw) === '') { return null; }
+    if (app_is_json_fmt($fmt)) { $d = json_decode($raw, true); return json_last_error() === JSON_ERROR_NONE ? $d : '__skip'; }
+    if (app_is_int_fmt($fmt)) { return preg_match('/^-?\d+$/', trim($raw)) ? (int) trim($raw) : '__skip'; }
+    if (app_is_num_fmt($fmt)) { return is_numeric(trim($raw)) ? (float) trim($raw) : '__skip'; }
+    return $raw;
+}
+/** Build a PATCH body from posted f[] comparing to the current row. Returns array(patch, errors). */
+function app_patch_from_post($table, $row) {
+    $cols = app_cols($table); $patch = array(); $errs = array();
+    $f = isset($_POST['f']) && is_array($_POST['f']) ? $_POST['f'] : array();
+    foreach ($f as $col => $raw) {
+        if (!isset($cols[$col])) { continue; }
+        $v = app_cast($cols[$col], $raw);
+        if ($v === '__skip') { $errs[] = $col; continue; }
+        $old = array_key_exists($col, (array) $row) ? $row[$col] : null;
+        if (json_encode($v) !== json_encode($old)) {
+            if (is_string($old) && is_string($v) && strtotime($old) && strtotime($v) && strtotime($old) === strtotime($v)) { continue; }
+            $patch[$col] = $v;
+        }
+    }
+    return array($patch, $errs);
+}
+function app_log($action, $target = '', $details = '') { audit_log('app_' . $action, $target, is_array($details) ? json_encode($details, JSON_UNESCAPED_UNICODE) : (string) $details); }
+
+/* ================= view helpers ================= */
 function g($a, $path, $def = null) {
     foreach (explode('.', $path) as $k) {
         if (!is_array($a) || !array_key_exists($k, $a) || $a[$k] === null) { return $def; }
@@ -222,26 +285,18 @@ function g($a, $path, $def = null) {
     }
     return $a;
 }
-/** First non-empty value among several keys of a row. */
 function gx($row, $keys, $def = null) {
     foreach ((array) $keys as $k) { $v = g($row, $k); if ($v !== null && $v !== '') { return $v; } }
     return $def;
-}
-function app_items($r, $key = 'items') {
-    if (!$r['ok'] || !is_array($r['data'])) { return array(); }
-    if (isset($r['data'][$key]) && is_array($r['data'][$key])) { return $r['data'][$key]; }
-    return (isset($r['data'][0]) && is_array($r['data'][0])) ? $r['data'] : array();   // plain array result
 }
 function app_num($v) { return ($v === null || $v === '' || !is_numeric($v)) ? '-' : number_format((float) $v, (floor((float) $v) == (float) $v) ? 0 : 2); }
 function app_pno($n) { return ($n === null || $n === '') ? '---' : str_pad((string) (int) $n, 3, '0', STR_PAD_LEFT); }
 function app_dt($iso) { return fmt_dt($iso); }
 function app_badge($s) {
     $s = is_scalar($s) ? (string) $s : '';
-    $map = array('active' => 'b-teal', 'ok' => 'b-teal', 'resolved' => 'b-teal', 'approved' => 'b-teal', 'win' => 'b-teal', 'won' => 'b-teal', 'credit' => 'b-teal', 'completed' => 'b-teal', 'finished' => 'b-teal',
-                 'live' => 'b-pink', 'in_progress' => 'b-pink', 'running' => 'b-pink', 'playing' => 'b-pink',
-                 'suspended' => 'b-red', 'rejected' => 'b-red', 'loss' => 'b-red', 'debit' => 'b-red', 'banned' => 'b-red', 'eliminated' => 'b-red',
-                 'under_review' => 'b-gold', 'pending' => 'b-gold', 'open' => 'b-gold', 'registration' => 'b-gold', 'draw' => 'b-gold', 'scheduled' => 'b-gold',
-                 'dismissed' => 'b-grey', 'cancelled' => 'b-grey');
+    $map = array('active' => 'b-teal', 'resolved' => 'b-teal', 'approved' => 'b-teal', 'win' => 'b-teal', 'credit' => 'b-teal', 'completed' => 'b-teal', 'finished' => 'b-teal',
+                 'live' => 'b-pink', 'in_progress' => 'b-pink', 'running' => 'b-pink', 'suspended' => 'b-red', 'rejected' => 'b-red', 'loss' => 'b-red', 'debit' => 'b-red', 'banned' => 'b-red',
+                 'under_review' => 'b-gold', 'pending' => 'b-gold', 'open' => 'b-gold', 'draw' => 'b-gold', 'dismissed' => 'b-grey', 'cancelled' => 'b-grey');
     if ($s === '') { return '<span class="muted">-</span>'; }
     return '<span class="badge ' . (isset($map[$s]) ? $map[$s] : 'b-grey') . '">' . e(str_replace('_', ' ', $s)) . '</span>';
 }
@@ -252,29 +307,43 @@ function app_avatar($url, $pno, $size = 36) {
     }
     return '<span class="av av-ph" style="width:' . (int) $size . 'px;height:' . (int) $size . 'px;font-size:' . max(10, (int) ($size / 3.2)) . 'px">' . e(app_pno($pno)) . '</span>';
 }
-function app_user_link($id, $label) {
+function app_user_link($id, $label = null) {
     $label = ($label !== null && $label !== '') ? (string) $label : (string) $id;
     if (!$id || !uuid_ok($id)) { return e($label !== '' ? $label : '-'); }
     return '<a href="/admin/app/users/?id=' . e($id) . '">' . e($label) . '</a>';
 }
-function app_text($v) {
+/** Display one cell value. */
+function app_cell($col, $v, $fmt = '') {
     if ($v === null || $v === '') { return '<span class="muted">-</span>'; }
-    if (is_bool($v)) { return $v ? 'yes' : 'no'; }
-    if (is_array($v)) { return '<code class="j">' . e(json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) . '</code>'; }
-    return e($v);
+    if (is_bool($v)) { return $v ? '<span class="pos">true</span>' : '<span class="muted">false</span>'; }
+    if (is_array($v)) { $j = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); return '<code class="j">' . e(strlen($j) > 160 ? substr($j, 0, 160) . '…' : $j) . '</code>'; }
+    if ($col === 'screenshot_path' || substr($col, -11) === '_screenshot') { return '<a href="/admin/app/evidence/?path=' . e(rawurlencode((string) $v)) . '" target="_blank" rel="noopener">Open image</a>'; }
+    if ($fmt === 'uuid' && uuid_ok($v) && preg_match('/(user|player|profile|owner|reporter|reported|sender|receiver|winner|friend|referr|target)/', $col)) { return app_user_link($v, substr($v, 0, 8)); }
+    if (strpos($fmt, 'timestamp') === 0 || (is_string($v) && preg_match('/_at$/', $col))) { return '<span class="nowrap">' . app_dt($v) . '</span>'; }
+    if (in_array($col, array('status', 'account_status', 'direction', 'result'), true)) { return app_badge($v); }
+    $s = (string) $v;
+    if (is_string($v) && preg_match('~^https://\S+\.(png|jpe?g|webp|gif)(\?\S*)?$~i', $s)) { return '<img class="av" src="' . e($s) . '" width="32" height="32" alt="">'; }
+    return '<span class="cellv">' . e(strlen($s) > 200 ? substr($s, 0, 200) . '…' : $s) . '</span>';
 }
-/** Flash an RPC result after an action. */
-function app_flash_result($r, $okMsg) {
-    if ($r['ok']) { flash_set('ok', $okMsg); }
-    else { flash_set('err', ($r['forbidden'] ? 'Forbidden: the account in includes/app_config.php is not an app admin. ' : '') . $r['error']); }
-}
-function app_error_box($r) {
-    if ($r['ok']) { return ''; }
-    return '<div class="flash err">' . ($r['forbidden'] ? '<b>Not allowed.</b> The account in includes/app_config.php is not an app admin (drotix.profiles.is_admin). ' : '') . e($r['error']) . '</div>';
+/** Generic table of rows. $linkTable: link each row to the Data editor. */
+function app_rows_table($rows, $table = null, $empty = 'No rows.') {
+    if (!$rows) { return '<div class="tbl-wrap"><table><tr><td class="muted">' . e($empty) . '</td></tr></table></div>'; }
+    $cols = array(); $fmts = $table ? app_cols($table) : array(); $pk = $table ? app_pk($table) : null;
+    foreach ($rows as $r) { foreach ((array) $r as $k => $v) { if (!in_array($k, $cols, true)) { $cols[] = $k; } } }
+    $h = '<div class="tbl-wrap"><table><tr>' . ($pk ? '<th></th>' : '');
+    foreach ($cols as $c) { $h .= '<th>' . e(str_replace('_', ' ', $c)) . '</th>'; }
+    $h .= '</tr>';
+    foreach ($rows as $r) {
+        $h .= '<tr>';
+        if ($pk) { $h .= '<td>' . (isset($r[$pk]) ? '<a class="btn ghost sm" href="/admin/app/data/?t=' . e(rawurlencode($table)) . '&amp;edit=' . e(rawurlencode((string) $r[$pk])) . '">Edit</a>' : '') . '</td>'; }
+        foreach ($cols as $c) { $h .= '<td>' . app_cell($c, isset($r[$c]) ? $r[$c] : null, isset($fmts[$c]) ? $fmts[$c] : '') . '</td>'; }
+        $h .= '</tr>';
+    }
+    return $h . '</table></div>';
 }
 function app_post($k, $max = 2000) { return clean_str(isset($_POST[$k]) ? $_POST[$k] : '', $max); }
 function app_get($k, $max = 200) { return clean_str(isset($_GET[$k]) ? $_GET[$k] : '', $max); }
-/** Pager when the total is unknown: shows Next if the page was full. */
+function app_err_box($r, $prefix = '') { return (!$r || $r['ok']) ? '' : '<div class="flash err">' . e($prefix . $r['error']) . '</div>'; }
 function app_pager_simple($page, $count, $per) {
     if ($page <= 1 && $count < $per) { return ''; }
     $h = '<div class="pager">';
@@ -283,23 +352,33 @@ function app_pager_simple($page, $count, $per) {
     if ($count >= $per) { $h .= '<a href="' . e(qs(array('page' => $page + 1))) . '">Next &rarr;</a>'; }
     return $h . '</div>';
 }
-/** datetime-local input value -> ISO 8601 with the panel timezone offset, or null. */
-function app_local_to_iso($v) {
-    $v = trim((string) $v);
-    if ($v === '') { return null; }
-    $t = strtotime($v);
-    return $t ? date('c', $t) : null;
-}
 
-/** Page header for App pages: CSP allowing avatar images, sidebar (App active), App sub-navigation. */
+/** Page guard: the normal /admin/ login only. Shows a setup message if the key or schema is not reachable. */
+function app_require() {
+    admin_require_login();
+    $p = app_config_problem();
+    $s = $p === '' ? app_schema() : null;
+    if ($p !== '' || !$s['ok'] || !app_profiles_table()) {
+        app_head('Mobile App', 'users');
+        if ($p !== '') { echo '<div class="flash err">' . e($p) . '</div>'; }
+        elseif (!$s['ok']) { echo '<div class="flash err">Could not read the <b>drotix</b> schema: ' . e($s['error']) . '</div><div class="panel">Check that the key is the <b>secret</b> key and that <b>drotix</b> is listed in Supabase &rarr; Project Settings &rarr; Data API &rarr; Exposed schemas.</div>'; }
+        else { echo '<div class="flash err">No profiles table found in the drotix schema.</div>'; }
+        admin_foot(); exit;
+    }
+}
+/** Header for Mobile App pages: CSP allowing avatar images, sidebar, sub navigation. */
 function app_head($title, $sub) {
     header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; form-action 'self'; frame-ancestors 'none'", true);
     admin_head($title, 'app');
-    $tabs = array('users' => array('/admin/app/users/', 'Users'), 'dash' => array('/admin/app/', 'Stats'), 'reports' => array('/admin/app/reports/', 'Reports'),
-                  'appeals' => array('/admin/app/appeals/', 'Appeals'), 'tour' => array('/admin/app/tournaments/', 'Tournaments'),
-                  'cast' => array('/admin/app/broadcast/', 'Broadcast'), 'audit' => array('/admin/app/audit/', 'Audit log'));
-    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=1"><script src="/admin/assets/app.js?v=1" defer></script>';
+    $tabs = array('users' => array('/admin/app/users/', 'Players'), 'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'));
+    foreach (array('reports' => '/report/', 'appeals' => '/appeal/', 'tournaments' => '/^tournaments?$/') as $k => $re) {
+        if (!empty($GLOBALS['__app_schema']['tables'])) {
+            foreach (array_keys($GLOBALS['__app_schema']['tables']) as $t) { if (preg_match($re, $t)) { $tabs['t:' . $t] = array('/admin/app/data/?t=' . rawurlencode($t), ucfirst(str_replace('_', ' ', $t))); break; } }
+        }
+    }
+    $tabs['audit'] = array('/admin/app/audit/', 'Audit log');
+    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=2"><script src="/admin/assets/app.js?v=2" defer></script>';
     echo '<div class="apptop"><nav class="subnav">';
-    foreach ($tabs as $k => $t) { echo '<a href="' . $t[0] . '"' . ($k === $sub ? ' class="on"' : '') . '>' . e($t[1]) . '</a>'; }
+    foreach ($tabs as $k => $t) { echo '<a href="' . e($t[0]) . '"' . ($k === $sub ? ' class="on"' : '') . '>' . e($t[1]) . '</a>'; }
     echo '</nav></div>';
 }

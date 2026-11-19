@@ -1,328 +1,297 @@
 <?php
-/* App admin: Users list (/admin/app/users/) and User page (/admin/app/users/?id=<uuid>&tab=...). */
+/* Mobile App: Players list (/admin/app/users/) and Player page (/admin/app/users/?id=<uuid>&tab=...).
+   No extra login: everything is done on the server with the service key. */
 require __DIR__ . '/../../../includes/app_admin_api.php';
 app_require();
 
+$PT = app_profiles_table();
+$PC = app_cols($PT);
+$IDC = app_profile_idcol();
+$WT = app_wallet_table();
+$TT = app_tx_table();
+
 $id = isset($_GET['id']) ? (string) $_GET['id'] : '';
-$tabs = array('overview' => 'Overview', 'matches' => 'Matches', 'tournaments' => 'Tournaments', 'wallet' => 'Wallet', 'logins' => 'Logins',
-              'chat' => 'Chat', 'moderation' => 'Reports & moderation', 'audit' => 'Audit');
-$tab = isset($_GET['tab'], $tabs[$_GET['tab']]) ? (string) $_GET['tab'] : 'overview';
-$reasons = array('iap_grant', 'ad_reward', 'daily_reward', 'match_reward', 'match_stake', 'tournament_entry', 'tournament_prize', 'tournament_refund', 'referral_bonus', 'admin_credit', 'admin_debit');
+$tabs = array('profile' => 'Profile & account', 'wallet' => 'Wallet', 'data' => 'All data');
+$tab = isset($_GET['tab'], $tabs[$_GET['tab']]) ? (string) $_GET['tab'] : 'profile';
+
+/** Load the profile row of a player. */
+function load_profile($PT, $IDC, $uid) {
+    list($rows, , $r) = app_select($PT, array($IDC => 'eq.' . $uid), 1, 0, false);
+    return array($rows ? $rows[0] : null, $r);
+}
+function wallet_of($WT, $uid) {
+    if (!$WT) { return null; }
+    $oc = app_owner_col($WT);
+    if (!$oc) { return null; }
+    list($rows, , ) = app_select($WT, array($oc => 'eq.' . $uid), 1, 0, false);
+    return $rows ? $rows[0] : null;
+}
 
 /* ================= actions ================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_verify();
     $uid = isset($_POST['user_id']) ? (string) $_POST['user_id'] : '';
     $act = isset($_POST['action']) ? (string) $_POST['action'] : '';
-    $back = '/admin/app/users/?id=' . rawurlencode($uid) . '&tab=' . rawurlencode(isset($_POST['tab'], $tabs[$_POST['tab']]) ? $_POST['tab'] : 'overview');
-    if (!uuid_ok($uid)) { flash_set('err', 'Bad user id.'); redirect('/admin/app/users/'); }
+    $back = '/admin/app/users/?id=' . rawurlencode($uid) . '&tab=' . rawurlencode(isset($_POST['tab'], $tabs[$_POST['tab']]) ? $_POST['tab'] : 'profile');
+    if (!uuid_ok($uid)) { flash_set('err', 'Bad player id.'); redirect('/admin/app/users/'); }
+    $fail = function ($r, $what) { flash_set('err', $what . ' failed: ' . $r['error']); };
 
-    if ($act === 'wallet') {
+    if ($act === 'save_profile') {
+        list($row, ) = load_profile($PT, $IDC, $uid);
+        if (!$row) { flash_set('err', 'Profile not found.'); redirect($back); }
+        list($patch, $errs) = app_patch_from_post($PT, $row);
+        unset($patch[$IDC]);
+        if ($errs) { flash_set('err', 'Invalid value in: ' . implode(', ', $errs) . '.'); redirect($back); }
+        if (!$patch) { flash_set('ok', 'Nothing changed.'); redirect($back); }
+        $r = app_db('PATCH', $PT, array($IDC => 'eq.' . $uid), $patch, 'return=minimal');
+        if ($r['ok']) { app_log('profile_update', $uid, $patch); flash_set('ok', 'Profile saved (' . implode(', ', array_keys($patch)) . ').'); } else { $fail($r, 'Save'); }
+    } elseif ($act === 'email') {
+        $email = app_post('email', 200);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { flash_set('err', 'Enter a valid email.'); redirect($back); }
+        $r = app_auth_update($uid, array('email' => $email, 'email_confirm' => true));
+        if ($r['ok']) {
+            if (isset($PC['email'])) { app_db('PATCH', $PT, array($IDC => 'eq.' . $uid), array('email' => $email), 'return=minimal'); }
+            app_log('email_change', $uid, $email); flash_set('ok', 'Email changed to ' . $email . ' (confirmed).');
+        } else { $fail($r, 'Email change'); }
+    } elseif ($act === 'password') {
+        $pw = isset($_POST['password']) ? (string) $_POST['password'] : '';
+        if (strlen($pw) < 6) { flash_set('err', 'Password must be at least 6 characters.'); redirect($back); }
+        $r = app_auth_update($uid, array('password' => $pw));
+        if ($r['ok']) { app_log('password_change', $uid); flash_set('ok', 'Password changed. Tell the player the new password.'); } else { $fail($r, 'Password change'); }
+    } elseif ($act === 'confirm_email') {
+        $r = app_auth_update($uid, array('email_confirm' => true));
+        if ($r['ok']) { app_log('email_confirm', $uid); flash_set('ok', 'Email marked as verified.'); } else { $fail($r, 'Confirm'); }
+    } elseif ($act === 'suspend' || $act === 'reinstate') {
+        $susp = $act === 'suspend';
+        $reason = app_post('reason', 500);
+        if ($susp && $reason === '') { flash_set('err', 'A reason is required.'); redirect($back); }
+        $patch = array();
+        if (isset($PC['account_status'])) { $patch['account_status'] = $susp ? 'suspended' : 'active'; }
+        if (isset($PC['suspension_reason'])) { $patch['suspension_reason'] = $susp ? $reason : null; }
+        if (isset($PC['suspended_at'])) { $patch['suspended_at'] = $susp ? date('c') : null; }
+        $msgs = array();
+        if ($patch) { $r = app_db('PATCH', $PT, array($IDC => 'eq.' . $uid), $patch, 'return=minimal'); if (!$r['ok']) { $fail($r, 'Profile update'); redirect($back); } $msgs[] = 'profile'; }
+        if (!empty($_POST['auth_ban']) || !$susp) {
+            $r = app_auth_update($uid, array('ban_duration' => $susp ? '876000h' : 'none'));
+            if ($r['ok']) { $msgs[] = $susp ? 'login blocked' : 'login unblocked'; } elseif ($susp) { $msgs[] = 'login block failed: ' . $r['error']; }
+        }
+        app_log($act, $uid, $reason);
+        flash_set('ok', ($susp ? 'Player suspended' : 'Player reinstated') . ' (' . implode(', ', $msgs) . ').');
+    } elseif ($act === 'wallet') {
         $amount = (int) (isset($_POST['amount']) ? $_POST['amount'] : 0);
         $dir = (isset($_POST['direction']) && $_POST['direction'] === 'debit') ? 'debit' : 'credit';
-        $note = app_post('note', 500);
-        $ref = app_post('reference', 200);
+        $note = app_post('note', 500); $ref = app_post('reference', 200);
         if ($amount <= 0 || $note === '') { flash_set('err', 'Amount (> 0) and note are required.'); redirect($back); }
-        $r = app_wallet_adjust($uid, $amount, $dir, $note, $ref);
-        if ($r['ok']) {
-            $dup = !empty($r['data']['duplicate']);
-            flash_set('ok', ($dup ? 'Already applied earlier with this reference (nothing changed). ' : ($dir === 'credit' ? 'Credited ' : 'Debited ') . number_format($amount) . ' coins. ')
-                . 'New balance: ' . app_num(g($r['data'], 'balance_minor')) . ' coins.' . (!$dup && $dir === 'credit' ? ' The player was notified.' : ''));
-        } else { app_flash_result($r, ''); }
-    } elseif ($act === 'suspend') {
-        $reason = app_post('reason', 500);
-        $rep = isset($_POST['report_id']) && uuid_ok($_POST['report_id']) ? (string) $_POST['report_id'] : '';
-        if ($reason === '') { flash_set('err', 'A reason is required.'); redirect($back); }
-        app_flash_result(app_suspend_user($uid, $reason, $rep, app_post('notes', 2000)), 'Player suspended.');
-    } elseif ($act === 'reinstate') {
-        app_flash_result(app_reinstate_user($uid, app_post('notes', 2000)), 'Player reinstated.');
-    } elseif ($act === 'rename') {
-        $u = app_post('username', 40);
-        if ($u === '') { flash_set('err', 'Enter a username.'); redirect($back); }
-        app_flash_result(app_update_user_profile($uid, $u, false), 'Username changed to ' . $u . '.');
-    } elseif ($act === 'clear_avatar') {
-        app_flash_result(app_update_user_profile($uid, '', true), 'Profile photo removed.');
+        $done = false; $msg = '';
+        if (app_has_rpc('admin_wallet_adjust')) {   // preferred: the game's own function (keeps the ledger + notification)
+            $r = app_rpc('admin_wallet_adjust', array('p_user_id' => $uid, 'p_amount' => $amount, 'p_direction' => $dir, 'p_note' => $note, 'p_reference' => $ref !== '' ? $ref : null));
+            if ($r['ok']) { $done = true; $msg = 'New balance: ' . app_num(g($r['data'], 'balance_minor')) . (!empty($r['data']['duplicate']) ? ' (reference already used: nothing changed)' : ''); }
+        }
+        if (!$done) {   // fallback: write the wallet + transaction rows directly
+            $w = wallet_of($WT, $uid);
+            $oc = $WT ? app_owner_col($WT) : null;
+            $bal = (int) g($w, 'balance_minor', 0);
+            $new = $dir === 'credit' ? $bal + $amount : $bal - $amount;
+            if (!$WT || !$oc) { flash_set('err', 'No wallet table found.'); redirect($back); }
+            if ($new < 0) { flash_set('err', 'Not enough coins (balance ' . number_format($bal) . ').'); redirect($back); }
+            $r = $w ? app_db('PATCH', $WT, array($oc => 'eq.' . $uid), array('balance_minor' => $new) + (array_key_exists('updated_at', app_cols($WT)) ? array('updated_at' => date('c')) : array()), 'return=minimal')
+                    : app_db('POST', $WT, array(), array($oc => $uid, 'balance_minor' => $new), 'return=minimal');
+            if (!$r['ok']) { $fail($r, 'Wallet update'); redirect($back); }
+            if ($TT && ($toc = app_owner_col($TT))) {
+                $tc = app_cols($TT);
+                $tx = array($toc => $uid, 'amount_minor' => $amount, 'direction' => $dir);
+                foreach (array('reason' => 'admin_' . $dir, 'balance_after' => $new, 'ref_type' => 'admin', 'ref_id' => $ref !== '' ? $ref : null, 'note' => $note, 'idempotency_key' => 'admin:' . ($ref !== '' ? $ref : bin2hex(random_bytes(8)))) as $k => $v) {
+                    if (isset($tc[$k])) { $tx[$k] = $v; }
+                }
+                if (isset($tc['wallet_id']) && $w && isset($w['id'])) { $tx['wallet_id'] = $w['id']; }
+                $tr = app_db('POST', $TT, array(), $tx, 'return=minimal');
+                if (!$tr['ok']) { $msg = ' (balance changed, but the history row was not saved: ' . $tr['error'] . ')'; }
+            }
+            $msg = 'New balance: ' . number_format($new) . $msg;
+        }
+        app_log('wallet_' . $dir, $uid, array('amount' => $amount, 'note' => $note, 'reference' => $ref));
+        flash_set('ok', ($dir === 'credit' ? 'Credited ' : 'Debited ') . number_format($amount) . ' coins. ' . $msg);
     } elseif ($act === 'notify') {
         $t = app_post('title', 80); $b = app_post('body', 500);
         if ($t === '' || $b === '') { flash_set('err', 'Title and message are required.'); redirect($back); }
-        app_flash_result(app_send_notification($uid, $t, $b), 'Notification sent.');
-    } elseif ($act === 'set_admin') {
-        $on = !empty($_POST['value']);
-        app_flash_result(app_set_admin($uid, $on), $on ? 'Player is now an app admin.' : 'Admin rights removed.');
+        $r = app_has_rpc('admin_send_notification') ? app_rpc('admin_send_notification', array('p_user_id' => $uid, 'p_title' => $t, 'p_body' => $b)) : array('ok' => false, 'error' => 'no function');
+        if (!$r['ok']) {
+            $nt = app_find_table(array('title', 'body'), '/notif/');
+            $oc = $nt ? app_owner_col($nt) : null;
+            $r = ($nt && $oc) ? app_db('POST', $nt, array(), array($oc => $uid, 'title' => $t, 'body' => $b), 'return=minimal') : $r;
+        }
+        if ($r['ok']) { app_log('notify', $uid, $t); flash_set('ok', 'Notification sent.'); } else { $fail($r, 'Notification'); }
+    } elseif ($act === 'delete_account') {
+        if (strtoupper(trim(isset($_POST['confirm_word']) ? (string) $_POST['confirm_word'] : '')) !== 'DELETE') { flash_set('err', 'Type DELETE to confirm.'); redirect($back); }
+        $r = app_auth_delete($uid);
+        if ($r['ok']) { app_log('account_delete', $uid); flash_set('ok', 'Account deleted.'); redirect('/admin/app/users/'); }
+        $fail($r, 'Delete');
     }
     redirect($back);
 }
 
-/* ---------- small renderers ---------- */
-function tbl_generic($rows, $empty = 'Nothing here.') {
-    if (!$rows) { return '<div class="tbl-wrap"><table><tr><td class="muted">' . e($empty) . '</td></tr></table></div>'; }
-    $cols = array();
-    foreach ($rows as $r) { if (is_array($r)) { foreach ($r as $k => $v) { if (!in_array($k, $cols, true)) { $cols[] = $k; } } } }
-    $h = '<div class="tbl-wrap"><table><tr>';
-    foreach ($cols as $c) { $h .= '<th>' . e(str_replace('_', ' ', $c)) . '</th>'; }
-    $h .= '</tr>';
-    foreach ($rows as $r) {
-        $h .= '<tr>';
-        foreach ($cols as $c) {
-            $v = is_array($r) && isset($r[$c]) ? $r[$c] : null;
-            if (is_string($v) && preg_match('/(_at|_on)$/', $c)) { $h .= '<td class="nowrap">' . app_dt($v) . '</td>'; }
-            elseif ($c === 'status' || $c === 'decision') { $h .= '<td>' . app_badge($v) . '</td>'; }
-            else { $h .= '<td>' . app_text($v) . '</td>'; }
-        }
-        $h .= '</tr>';
-    }
-    return $h . '</table></div>';
-}
-function stat_card($n, $label, $sub = '', $cls = '') {
-    return '<div class="card"><div class="n ' . $cls . '">' . $n . '</div><div class="l">' . e($label) . '</div>' . ($sub !== '' ? '<div class="s">' . $sub . '</div>' : '') . '</div>';
-}
-function hidden_user($uid, $tab, $act) {
-    return csrf_field() . '<input type="hidden" name="user_id" value="' . e($uid) . '"><input type="hidden" name="tab" value="' . e($tab) . '"><input type="hidden" name="action" value="' . e($act) . '">';
-}
+function hid($uid, $tab, $act) { return csrf_field() . '<input type="hidden" name="user_id" value="' . e($uid) . '"><input type="hidden" name="tab" value="' . e($tab) . '"><input type="hidden" name="action" value="' . e($act) . '">'; }
 
 /* ================= list ================= */
 if ($id === '') {
     $q = app_get('q', 100);
-    $st = app_get('status', 20);
-    if (!in_array($st, array('active', 'suspended', 'under_review'), true)) { $st = ''; }
+    $st = app_get('status', 30);
     $page = max(1, (int) (isset($_GET['page']) ? $_GET['page'] : 1)); $per = 25;
-    $r = app_list_users($q, $st, $per, ($page - 1) * $per);
-    $items = app_items($r);
-    $total = $r['ok'] ? (int) g($r['data'], 'total', 0) : null;
-
-    app_head('Mobile App users', 'users');
-    echo '<form class="row" method="get"><input name="q" value="' . e($q) . '" placeholder="Username, email, player no or user id" style="min-width:280px"><select name="status"><option value="">All statuses</option>';
-    foreach (array('active' => 'Active', 'suspended' => 'Suspended', 'under_review' => 'Under review') as $k => $v) { echo '<option value="' . $k . '"' . ($st === $k ? ' selected' : '') . '>' . $v . '</option>'; }
-    echo '</select><button class="btn sm" type="submit">Search</button>' . ($q !== '' || $st !== '' ? '<a class="btn ghost sm" href="/admin/app/users/">Clear</a>' : '');
-    if ($total !== null) { echo '<span class="muted">' . number_format($total) . ' players</span>'; }
-    echo '</form>' . app_error_box($r);
-    echo '<div class="tbl-wrap"><table><tr><th>Player</th><th>No.</th><th>Email</th><th>Status</th><th>Verified</th><th>Balance</th><th>Joined</th><th>Last sign-in</th></tr>';
-    foreach ($items as $u) {
-        $uid = (string) g($u, 'id', '');
-        $href = '/admin/app/users/?id=' . rawurlencode($uid);
-        echo '<tr class="click" data-href="' . e($href) . '"><td><div class="ucell">' . app_avatar(g($u, 'avatar_url'), g($u, 'player_no')) . '<div><a href="' . e($href) . '"><b>' . e(g($u, 'username', '(no name)')) . '</b></a>'
-            . (g($u, 'is_admin') ? ' <span class="badge b-pink">admin</span>' : '') . '</div></div></td>';
-        echo '<td class="pno">#' . e(app_pno(g($u, 'player_no'))) . '</td><td>' . app_text(g($u, 'email')) . '</td><td>' . app_badge(g($u, 'account_status')) . '</td>';
-        echo '<td>' . (g($u, 'email_verified_at') ? '<span class="pos">&#10003;</span>' : '<span class="muted">-</span>') . '</td><td>' . app_num(g($u, 'balance')) . '</td>';
-        echo '<td class="nowrap">' . app_dt(g($u, 'created_at')) . '</td><td class="nowrap">' . app_dt(g($u, 'last_sign_in_at')) . '</td></tr>';
+    $query = array();
+    if (isset($PC['created_at'])) { $query['order'] = 'created_at.desc'; }
+    if ($st !== '' && isset($PC['account_status']) && app_valid_ident($st)) { $query['account_status'] = 'eq.' . $st; }
+    $emailHits = null;
+    if ($q !== '') {
+        if (uuid_ok($q)) { $query[$IDC] = 'eq.' . $q; }
+        elseif (ctype_digit(ltrim($q, '#')) && isset($PC['player_no'])) { $query['player_no'] = 'eq.' . (int) ltrim($q, '#'); }
+        elseif (strpos($q, '@') !== false) {
+            $emailHits = app_auth_search_email($q);
+            $ids = array(); foreach ($emailHits as $u) { $ids[] = $u['id']; }
+            $query[$IDC] = 'in.(' . ($ids ? implode(',', $ids) : '00000000-0000-0000-0000-000000000000') . ')';
+        } else {
+            $s = pg_safe($q); $ors = array();
+            foreach (array('username', 'display_name', 'full_name', 'email', 'referral_code', 'phone_e164') as $c) { if (isset($PC[$c])) { $ors[] = $c . '.ilike.*' . $s . '*'; } }
+            if ($ors) { $query['or'] = '(' . implode(',', $ors) . ')'; }
+        }
     }
-    if (!$items) { echo '<tr><td colspan="8" class="muted">' . ($r['ok'] ? 'No players found.' : 'Could not load players.') . '</td></tr>'; }
-    echo '</table></div>' . ($total !== null ? pager($page, $total, $per) : app_pager_simple($page, count($items), $per));
+    list($rows, $total, $r) = app_select($PT, $query, $per, ($page - 1) * $per);
+    $ids = array(); foreach ($rows as $p) { if (isset($p[$IDC])) { $ids[] = $p[$IDC]; } }
+    $auth = app_auth_many($ids);
+    $bal = array();
+    if ($WT && $ids && ($oc = app_owner_col($WT))) {
+        list($ws, , ) = app_select($WT, array($oc => 'in.(' . implode(',', $ids) . ')'), 100, 0, false);
+        foreach ($ws as $w) { $bal[$w[$oc]] = g($w, 'balance_minor'); }
+    }
+
+    app_head('Mobile App players', 'users');
+    echo '<form class="row" method="get"><input name="q" value="' . e($q) . '" placeholder="Username, email, player no or user id" style="min-width:280px">';
+    if (isset($PC['account_status'])) {
+        echo '<select name="status"><option value="">All statuses</option>';
+        foreach (array('active', 'suspended', 'under_review') as $s) { echo '<option value="' . $s . '"' . ($st === $s ? ' selected' : '') . '>' . e(str_replace('_', ' ', $s)) . '</option>'; }
+        echo '</select>';
+    }
+    echo '<button class="btn sm" type="submit">Search</button>' . ($q !== '' || $st !== '' ? '<a class="btn ghost sm" href="/admin/app/users/">Clear</a>' : '');
+    if ($total !== null) { echo '<span class="muted">' . number_format($total) . ' players</span>'; }
+    echo '</form>' . app_err_box($r);
+    echo '<div class="tbl-wrap"><table><tr><th>Player</th><th>No.</th><th>Email</th><th>Status</th><th>Verified</th><th>Coins</th><th>Joined</th><th>Last sign-in</th></tr>';
+    foreach ($rows as $p) {
+        $uid = (string) g($p, $IDC, '');
+        $a = isset($auth[$uid]) ? $auth[$uid] : null;
+        $href = '/admin/app/users/?id=' . rawurlencode($uid);
+        echo '<tr class="click" data-href="' . e($href) . '"><td><div class="ucell">' . app_avatar(g($p, 'avatar_url'), g($p, 'player_no')) . '<div><a href="' . e($href) . '"><b>' . e(gx($p, array('username', 'display_name'), '(no name)')) . '</b></a>'
+            . (g($p, 'is_admin') ? ' <span class="badge b-pink">admin</span>' : '') . '</div></div></td>';
+        echo '<td class="pno">#' . e(app_pno(g($p, 'player_no'))) . '</td><td>' . e(gx($a, array('email'), gx($p, array('email'), '-'))) . '</td><td>' . app_badge(g($p, 'account_status')) . (g($a, 'banned_until') ? ' <span class="badge b-red">login blocked</span>' : '') . '</td>';
+        echo '<td>' . (g($a, 'email_confirmed_at') || g($p, 'email_verified_at') ? '<span class="pos">&#10003;</span>' : '<span class="muted">-</span>') . '</td><td>' . app_num(isset($bal[$uid]) ? $bal[$uid] : null) . '</td>';
+        echo '<td class="nowrap">' . app_dt(gx($p, array('created_at'), g($a, 'created_at'))) . '</td><td class="nowrap">' . app_dt(g($a, 'last_sign_in_at')) . '</td></tr>';
+    }
+    if (!$rows) { echo '<tr><td colspan="8" class="muted">' . ($r['ok'] ? 'No players found.' : 'Could not load players.') . '</td></tr>'; }
+    echo '</table></div>' . ($total !== null ? pager($page, $total, $per) : app_pager_simple($page, count($rows), $per));
     admin_foot(); exit;
 }
 
-/* ================= user page ================= */
-if (!uuid_ok($id)) { flash_set('err', 'Bad user id.'); redirect('/admin/app/users/'); }
+/* ================= player page ================= */
+if (!uuid_ok($id)) { flash_set('err', 'Bad player id.'); redirect('/admin/app/users/'); }
+list($p, $pr) = load_profile($PT, $IDC, $id);
+$ar = app_auth_get($id);
+$a = $ar['ok'] ? $ar['data'] : null;
+$w = wallet_of($WT, $id);
+$balance = g($w, 'balance_minor');
+$name = (string) gx($p, array('username', 'display_name'), gx($a, array('email'), '(no name)'));
 
-/* CSV export of transactions (before any output) */
-if ($tab === 'wallet' && isset($_GET['export'])) {
-    $reason = app_get('reason', 40);
-    $rows = array();
-    for ($off = 0; $off < 20000; $off += 500) {
-        $tr = app_user_transactions($id, 500, $off, $reason);
-        $chunk = app_items($tr);
-        $rows = array_merge($rows, $chunk);
-        if (count($chunk) < 500) { break; }
-    }
-    csv_out('drotix_transactions_' . substr($id, 0, 8) . ($reason !== '' ? '_' . $reason : '') . '.csv', $rows);
-}
-
-$ur = app_get_user($id);
-$u = $ur['ok'] ? $ur['data'] : array();
-$p = g($u, 'profile', array());
-$name = (string) g($p, 'username', '(no name)');
-$status = (string) g($p, 'account_status', '');
-$isAdmin = (bool) g($p, 'is_admin', false);
-$balance = g($u, 'wallet.balance_minor');
-$me = app_me();
-$isMe = $me['user_id'] !== '' && $me['user_id'] === $id;
-
-app_head('Mobile App user', 'users');
+app_head('Player', 'users');
 echo '<div class="row"><a class="btn ghost sm" href="/admin/app/users/">&larr; All players</a></div>';
-if (!$ur['ok']) { echo app_error_box($ur); admin_foot(); exit; }
+if (!$p && !$a) { echo '<div class="flash err">Player not found. ' . e($pr['error'] . ' ' . $ar['error']) . '</div>'; admin_foot(); exit; }
+if (!$p) { echo '<div class="flash err">This account has no game profile yet (only a login account).</div>'; }
 
 /* ---------- header ---------- */
-$providers = g($u, 'auth.providers', array());
-$devices = g($u, 'devices', array());
-$devTxt = array();
-foreach ((array) $devices as $dv) { $devTxt[] = trim(g($dv, 'platform', '?') . ' ' . g($dv, 'locale', '')) . ' (' . app_dt(g($dv, 'updated_at')) . ')'; }
+$providers = (array) g($a, 'app_metadata.providers', array());
 echo '<div class="panel"><div class="uhead">' . app_avatar(g($p, 'avatar_url'), g($p, 'player_no'), 84);
-echo '<div class="who"><h2>' . e($name) . ' <span class="pno">#' . e(app_pno(g($p, 'player_no'))) . '</span> ' . app_badge($status) . ($isAdmin ? ' <span class="badge b-pink">app admin</span>' : '') . '</h2>';
-if ($status === 'suspended' && g($p, 'suspension_reason')) { echo '<div class="muted">Suspended ' . app_dt(g($p, 'suspended_at')) . ': ' . e(g($p, 'suspension_reason')) . '</div>'; }
-echo '<div class="muted" style="font-size:12px">User id: ' . e($id) . '</div></div>';
-echo '<div class="meta">';
-$email = g($u, 'auth.email');
-echo '<div><span>Email:</span> ' . app_text($email) . ' ' . (g($u, 'auth.email_confirmed_at') || g($p, 'email_verified_at') ? '<span class="badge b-teal">verified</span>' : '<span class="badge b-grey">not verified</span>') . '</div>';
-echo '<div><span>Phone:</span> ' . app_text(gx($u, array('profile.phone_e164', 'auth.phone'))) . '</div>';
-echo '<div><span>Joined:</span> ' . app_dt(gx($u, array('profile.created_at', 'auth.created_at'))) . '</div>';
-echo '<div><span>Last sign-in:</span> ' . app_dt(g($u, 'auth.last_sign_in_at')) . '</div>';
-echo '<div><span>Login count:</span> ' . (g($u, 'auth.login_count') === null ? '<span class="muted">audit log off</span>' : app_num(g($u, 'auth.login_count'))) . '</div>';
-echo '<div><span>Sign-in with:</span> ' . ($providers ? e(implode(', ', (array) $providers)) : '<span class="muted">-</span>') . '</div>';
-echo '<div><span>Country:</span> ' . app_text(g($p, 'country_iso2')) . '</div>';
-echo '<div><span>Referral code:</span> ' . app_text(g($p, 'referral_code')) . '</div>';
-echo '<div><span>Banned until:</span> ' . (g($u, 'auth.banned_until') ? app_dt(g($u, 'auth.banned_until')) : '<span class="muted">-</span>') . '</div>';
-echo '<div><span>Devices:</span> ' . ($devTxt ? e(implode(' · ', $devTxt)) : '<span class="muted">-</span>') . '</div>';
+echo '<div class="who"><h2>' . e($name) . ' <span class="pno">#' . e(app_pno(g($p, 'player_no'))) . '</span> ' . app_badge(g($p, 'account_status')) . (g($p, 'is_admin') ? ' <span class="badge b-pink">app admin</span>' : '') . (g($a, 'banned_until') ? ' <span class="badge b-red">login blocked</span>' : '') . '</h2>';
+if (g($p, 'suspension_reason')) { echo '<div class="muted">Suspended ' . app_dt(g($p, 'suspended_at')) . ': ' . e(g($p, 'suspension_reason')) . '</div>'; }
+echo '<div class="muted" style="font-size:12px">User id: ' . e($id) . '</div></div><div class="meta">';
+echo '<div><span>Email:</span> ' . e(g($a, 'email', '-')) . ' ' . (g($a, 'email_confirmed_at') ? '<span class="badge b-teal">verified</span>' : '<span class="badge b-grey">not verified</span>') . '</div>';
+echo '<div><span>Phone:</span> ' . e(gx($p, array('phone_e164'), g($a, 'phone', '-'))) . '</div>';
+echo '<div><span>Joined:</span> ' . app_dt(gx($p, array('created_at'), g($a, 'created_at'))) . '</div>';
+echo '<div><span>Last sign-in:</span> ' . app_dt(g($a, 'last_sign_in_at')) . '</div>';
+echo '<div><span>Sign-in with:</span> ' . ($providers ? e(implode(', ', $providers)) : '<span class="muted">-</span>') . '</div>';
+echo '<div><span>Country:</span> ' . e(g($p, 'country_iso2', '-')) . '</div>';
+echo '<div><span>Coins:</span> <b>' . app_num($balance) . '</b></div>';
+echo '<div><span>Login blocked until:</span> ' . (g($a, 'banned_until') ? app_dt(g($a, 'banned_until')) : '<span class="muted">-</span>') . '</div>';
 echo '</div></div>';
 
-/* ---------- actions ---------- */
-$h = function ($act) use ($id, $tab) { return hidden_user($id, $tab, $act); };
+/* ---------- quick actions ---------- */
+$isSusp = g($p, 'account_status') === 'suspended' || g($a, 'banned_until');
 echo '<div class="actions">';
-if ($status !== 'suspended') {
-    echo '<details class="act"><summary class="btn danger sm">Suspend</summary><form class="pop" method="post" data-confirm="Suspend ' . e($name) . '? They will be signed out of the app.">' . $h('suspend')
-        . '<label>Reason (shown to the player)<input name="reason" required maxlength="500"></label><label>Admin notes (private)<textarea name="notes" maxlength="2000"></textarea></label>'
-        . '<label>Linked report id (optional)<input name="report_id" placeholder="uuid" pattern="[0-9a-fA-F-]{36}"></label><button class="btn danger sm" type="submit">Suspend player</button></form></details>';
+if (!$isSusp) {
+    echo '<details class="act"><summary class="btn danger sm">Suspend</summary><form class="pop" method="post" data-confirm="Suspend ' . e($name) . '?">' . hid($id, $tab, 'suspend')
+        . '<label>Reason<input name="reason" required maxlength="500"></label><label class="chk"><input type="checkbox" name="auth_ban" value="1" checked> Also block login</label><button class="btn danger sm" type="submit">Suspend player</button></form></details>';
 } else {
-    echo '<details class="act"><summary class="btn sm">Reinstate</summary><form class="pop" method="post" data-confirm="Lift the suspension of ' . e($name) . '? An open appeal will be approved.">' . $h('reinstate')
-        . '<label>Notes (optional)<textarea name="notes" maxlength="2000"></textarea></label><button class="btn sm" type="submit">Reinstate player</button></form></details>';
+    echo '<form method="post" data-confirm="Reinstate ' . e($name) . ' and unblock login?">' . hid($id, $tab, 'reinstate') . '<button class="btn sm" type="submit">Reinstate</button></form>';
 }
-echo '<details class="act"><summary class="btn ghost sm">Adjust coins</summary><form class="pop" method="post" data-wallet data-balance="' . e((int) $balance) . '" data-user="' . e($name) . '">' . $h('wallet')
-    . '<div class="muted">Current balance: <b>' . app_num($balance) . '</b> coins</div>'
-    . '<label>Direction<select name="direction"><option value="credit">Credit (add coins)</option><option value="debit">Debit (remove coins)</option></select></label>'
-    . '<label>Amount (coins)<input name="amount" type="number" min="1" step="1" required></label><label>Note (required)<input name="note" required maxlength="500" placeholder="e.g. Refund for failed purchase"></label>'
-    . '<label>Reference (optional, applied once)<input name="reference" maxlength="200" placeholder="Play order id / ticket no."></label><button class="btn sm" type="submit">Apply</button></form></details>';
-echo '<details class="act"><summary class="btn ghost sm">Edit username</summary><form class="pop" method="post" data-confirm="Change the username of ' . e($name) . '?">' . $h('rename')
-    . '<label>New username<input name="username" required maxlength="40" value="' . e($name) . '"></label><button class="btn sm" type="submit">Save</button></form></details>';
-if (g($p, 'avatar_url')) {
-    echo '<form method="post" data-confirm="Remove the profile photo of ' . e($name) . '?">' . $h('clear_avatar') . '<button class="btn ghost sm" type="submit">Remove photo</button></form>';
-}
-echo '<details class="act"><summary class="btn ghost sm">Send notification</summary><form class="pop" method="post" data-confirm="Send this notification to ' . e($name) . '?">' . $h('notify')
-    . '<label>Title<input name="title" required maxlength="80"></label><label>Message<textarea name="body" required maxlength="500"></textarea></label><button class="btn sm" type="submit">Send (push + in-app)</button></form></details>';
-if (!$isMe) {
-    echo '<form method="post" data-confirm="' . ($isAdmin ? 'Remove app admin rights from ' : 'Make ') . e($name) . ($isAdmin ? '?' : ' an app admin? They will be able to use this panel.') . '">' . $h('set_admin')
-        . '<input type="hidden" name="value" value="' . ($isAdmin ? '0' : '1') . '"><button class="btn ' . ($isAdmin ? 'danger' : 'ghost') . ' sm" type="submit">' . ($isAdmin ? 'Remove admin' : 'Make admin') . '</button></form>';
-}
+echo '<details class="act"><summary class="btn ghost sm">Adjust coins</summary><form class="pop" method="post" data-wallet data-balance="' . e((int) $balance) . '" data-user="' . e($name) . '">' . hid($id, $tab, 'wallet')
+    . '<div class="muted">Current balance: <b>' . app_num($balance) . '</b></div><label>Direction<select name="direction"><option value="credit">Credit (add)</option><option value="debit">Debit (remove)</option></select></label>'
+    . '<label>Amount<input name="amount" type="number" min="1" step="1" required></label><label>Note (required)<input name="note" required maxlength="500"></label><label>Reference (optional)<input name="reference" maxlength="200"></label><button class="btn sm" type="submit">Apply</button></form></details>';
+echo '<details class="act"><summary class="btn ghost sm">Change email</summary><form class="pop" method="post" data-confirm="Change the login email of ' . e($name) . '?">' . hid($id, $tab, 'email')
+    . '<label>New email<input name="email" type="email" required value="' . e(g($a, 'email', '')) . '"></label><button class="btn sm" type="submit">Save email</button></form></details>';
+echo '<details class="act"><summary class="btn ghost sm">Change password</summary><form class="pop" method="post" data-confirm="Set a new password for ' . e($name) . '?">' . hid($id, $tab, 'password')
+    . '<label>New password (min 6)<input name="password" type="text" required minlength="6" autocomplete="off"></label><button class="btn sm" type="submit">Save password</button></form></details>';
+if ($a && !g($a, 'email_confirmed_at')) { echo '<form method="post" data-confirm="Mark the email as verified?">' . hid($id, $tab, 'confirm_email') . '<button class="btn ghost sm" type="submit">Verify email</button></form>'; }
+echo '<details class="act"><summary class="btn ghost sm">Send notification</summary><form class="pop" method="post" data-confirm="Send this notification?">' . hid($id, $tab, 'notify')
+    . '<label>Title<input name="title" required maxlength="80"></label><label>Message<textarea name="body" required maxlength="500"></textarea></label><button class="btn sm" type="submit">Send</button></form></details>';
+echo '<details class="act"><summary class="btn danger sm">Delete account</summary><form class="pop" method="post" data-confirm="Permanently delete this account? This cannot be undone.">' . hid($id, $tab, 'delete_account')
+    . '<div class="warn" style="margin:0">Deletes the login account. Game data linked to it may be deleted too.</div><label>Type DELETE<input name="confirm_word" required autocomplete="off"></label><button class="btn danger sm" type="submit">Delete permanently</button></form></details>';
 echo '</div></div>';
 
 /* ---------- tabs ---------- */
 echo '<nav class="tabs">';
 foreach ($tabs as $k => $v) { echo '<a href="/admin/app/users/?id=' . e($id) . '&amp;tab=' . $k . '"' . ($k === $tab ? ' class="on"' : '') . '>' . e($v) . '</a>'; }
 echo '</nav>';
-$page = max(1, (int) (isset($_GET['page']) ? $_GET['page'] : 1));
 
-if ($tab === 'overview') {
-    $m = g($u, 'matches', array()); $t = g($u, 'tournaments', array()); $c = g($u, 'coins', array()); $s = g($u, 'social', array()); $mo = g($u, 'moderation', array());
-    $delta = g($m, 'coin_delta');
-    echo '<h2>Matches</h2><div class="cards sm">';
-    echo stat_card(app_num(g($m, 'total')), 'Matches played', 'Last: ' . app_dt(g($m, 'last_played_at')));
-    echo stat_card(app_num(g($m, 'wins')) . ' / ' . app_num(g($m, 'losses')) . ' / ' . app_num(g($m, 'draws')), 'Wins / losses / draws', '', 'teal');
-    echo stat_card(app_num(g($m, 'online')) . ' / ' . app_num(g($m, 'vs_ai')), 'Online / vs AI');
-    echo stat_card(($delta > 0 ? '+' : '') . app_num($delta), 'Coins won/lost in matches', '', $delta < 0 ? '' : 'teal');
-    echo '</div><h2>Tournaments</h2><div class="cards sm">';
-    echo stat_card(app_num(g($t, 'joined')), 'Joined') . stat_card(app_num(g($t, 'won')), 'Won', '', 'gold') . stat_card(app_num(g($t, 'prizes')), 'Prizes (coins)', '', 'teal') . stat_card(app_num(g($t, 'entry_paid')), 'Entry fees paid');
-    echo '</div><h2>Coins</h2><div class="cards sm">';
-    echo stat_card(app_num($balance), 'Balance', g($u, 'wallet.updated_at') ? 'Updated ' . app_dt(g($u, 'wallet.updated_at')) : 'No wallet yet', 'gold');
-    echo stat_card(app_num(g($c, 'credited')), 'Total credited', '', 'teal') . stat_card(app_num(g($c, 'debited')), 'Total debited');
-    echo stat_card(app_num(g($c, 'purchased')), 'Purchased (IAP)', '', 'teal') . stat_card(app_num(g($c, 'ad_rewards')), 'Ad rewards') . stat_card(app_num(g($c, 'daily_rewards')), 'Daily rewards');
-    echo stat_card(app_num(g($c, 'admin_adjustments')), 'Admin adjustments') . stat_card(app_num(g($c, 'transactions')), 'Transactions');
-    echo '</div><h2>Social &amp; moderation</h2><div class="cards sm">';
-    echo stat_card(app_num(g($s, 'friends')), 'Friends') . stat_card(app_num(g($s, 'challenges_sent')) . ' / ' . app_num(g($s, 'challenges_received')), 'Challenges sent / received');
-    echo stat_card(app_num(g($s, 'chat_messages')), 'Chat messages') . stat_card(app_num(g($s, 'referred_count')), 'Players referred', 'Referred by: ' . e(g($s, 'referred_by', '-')));
-    echo stat_card(app_num(g($mo, 'reports_received')), 'Reports received', '', (int) g($mo, 'reports_received') > 0 ? '' : 'teal') . stat_card(app_num(g($mo, 'reports_made')), 'Reports made');
-    echo stat_card(app_num(g($u, 'achievements')), 'Achievements') . stat_card(app_num(g($u, 'missions_claimed')), 'Missions claimed');
-    echo '</div>';
-    echo '<details style="margin-top:20px"><summary class="muted">Full profile (raw)</summary><pre>' . e(json_encode($p, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) . '</pre></details>';
-}
-
-elseif ($tab === 'matches') {
-    $per = 25;
-    $r = app_user_matches($id, $per, ($page - 1) * $per);
-    $items = app_items($r);
-    echo app_error_box($r) . '<div class="tbl-wrap"><table><tr><th>Played</th><th>Mode</th><th>Result</th><th>Opponent</th><th>Board</th><th>Difficulty</th><th>Stake</th><th>Coins</th><th>Room</th></tr>';
-    foreach ($items as $m) {
-        $cd = g($m, 'coin_delta');
-        echo '<tr><td class="nowrap">' . app_dt(g($m, 'played_at')) . '</td><td>' . e(str_replace('_', ' ', (string) g($m, 'mode', '-'))) . '</td><td>' . app_badge(g($m, 'result')) . '</td>';
-        echo '<td>' . app_text(gx($m, array('opponent_username', 'opponent_name'))) . '</td><td>' . app_text(g($m, 'board_size') ? g($m, 'board_size') . '×' . g($m, 'board_size') : null) . '</td>';
-        echo '<td>' . app_text(g($m, 'difficulty')) . '</td><td>' . app_num(g($m, 'stake')) . '</td><td class="' . ($cd > 0 ? 'pos' : ($cd < 0 ? 'neg' : '')) . '">' . ($cd > 0 ? '+' : '') . app_num($cd) . '</td>';
-        echo '<td><code class="j">' . e(substr((string) g($m, 'room_id', ''), 0, 8)) . '</code></td></tr>';
-    }
-    if (!$items) { echo '<tr><td colspan="9" class="muted">' . ($r['ok'] ? 'No matches.' : 'Could not load matches.') . '</td></tr>'; }
-    echo '</table></div>' . app_pager_simple($page, count($items), $per);
-}
-
-elseif ($tab === 'tournaments') {
-    $r = app_user_tournaments($id);
-    $items = app_items($r);
-    echo app_error_box($r) . '<div class="tbl-wrap"><table><tr><th>Tournament</th><th>Status</th><th>Starts</th><th>Entry fee</th><th>Bracket</th><th>Player status</th><th>Seed</th><th>Rounds won</th><th>Out in round</th><th>Place</th><th>Prize</th><th>Paid</th><th>Joined</th></tr>';
-    foreach ($items as $t) {
-        echo '<tr><td><b>' . e(g($t, 'name', '-')) . '</b></td><td>' . app_badge(g($t, 'tournament_status')) . '</td><td class="nowrap">' . app_dt(g($t, 'starts_at')) . '</td><td>' . app_num(g($t, 'entry_fee_minor')) . '</td>';
-        echo '<td>' . app_num(g($t, 'bracket_size')) . '</td><td>' . app_badge(g($t, 'my_status')) . '</td><td>' . app_num(g($t, 'seed')) . '</td><td>' . app_num(g($t, 'rounds_won')) . '</td><td>' . app_num(g($t, 'eliminated_round')) . '</td>';
-        echo '<td>' . app_num(g($t, 'final_place')) . '</td><td class="pos">' . app_num(g($t, 'prize_minor')) . '</td><td>' . app_num(g($t, 'paid_minor')) . '</td><td class="nowrap">' . app_dt(g($t, 'joined_at')) . '</td></tr>';
-    }
-    if (!$items) { echo '<tr><td colspan="13" class="muted">' . ($r['ok'] ? 'No tournaments joined.' : 'Could not load tournaments.') . '</td></tr>'; }
-    echo '</table></div>';
-}
-
-elseif ($tab === 'wallet') {
-    $reason = app_get('reason', 40);
-    $per = 50;
-    $r = app_user_transactions($id, $per, ($page - 1) * $per, $reason);
-    $items = app_items($r);
-    $total = $r['ok'] && g($r['data'], 'total') !== null ? (int) g($r['data'], 'total') : null;
-    echo '<div class="cards sm">' . stat_card(app_num($balance), 'Balance (coins)', e(g($u, 'wallet.currency_code', '')), 'gold') . stat_card($total === null ? '-' : app_num($total), 'Transactions' . ($reason !== '' ? ' (' . $reason . ')' : '')) . '</div>';
-    echo '<form class="row" method="get"><input type="hidden" name="id" value="' . e($id) . '"><input type="hidden" name="tab" value="wallet"><select name="reason"><option value="">All reasons</option>';
-    foreach ($reasons as $rs) { echo '<option' . ($reason === $rs ? ' selected' : '') . '>' . e($rs) . '</option>'; }
-    echo '</select><button class="btn sm" type="submit">Filter</button><a class="btn ghost sm" href="' . e(qs(array('export' => 1, 'page' => null))) . '">Export CSV</a></form>';
-    echo app_error_box($r) . '<div class="tbl-wrap"><table><tr><th>When</th><th>Amount</th><th>Reason</th><th>Reference</th><th>Balance after</th><th>Idempotency key</th></tr>';
-    foreach ($items as $t) {
-        $cr = g($t, 'direction') === 'credit';
-        echo '<tr><td class="nowrap">' . app_dt(g($t, 'created_at')) . '</td><td class="' . ($cr ? 'pos' : 'neg') . ' nowrap">' . ($cr ? '+' : '&minus;') . app_num(g($t, 'amount_minor')) . '</td>';
-        echo '<td>' . e(str_replace('_', ' ', (string) g($t, 'reason', '-'))) . '</td><td>' . app_text(trim(g($t, 'ref_type', '') . ' ' . g($t, 'ref_id', ''))) . '</td>';
-        echo '<td>' . app_num(g($t, 'balance_after')) . '</td><td><code class="j">' . e(g($t, 'idempotency_key', '')) . '</code></td></tr>';
-    }
-    if (!$items) { echo '<tr><td colspan="6" class="muted">' . ($r['ok'] ? 'No transactions.' : 'Could not load transactions.') . '</td></tr>'; }
-    echo '</table></div>' . ($total !== null ? pager($page, $total, $per) : app_pager_simple($page, count($items), $per));
-}
-
-elseif ($tab === 'logins') {
-    $r = app_user_logins($id, 100);
-    $items = app_items($r);
-    echo app_error_box($r);
-    if ($r['ok']) { echo '<p>Last sign-in: <b>' . app_dt(g($r['data'], 'last_sign_in_at')) . '</b></p>'; }
-    if ($r['ok'] && !$items) {
-        echo '<div class="warn">Audit log disabled: Supabase Auth audit logs are off, so the login history is not available. Only the last sign-in time is known.</div>';
-    } else {
-        echo '<div class="tbl-wrap"><table><tr><th>When</th><th>Action</th><th>IP address</th></tr>';
-        foreach ($items as $l) { echo '<tr><td class="nowrap">' . app_dt(g($l, 'created_at')) . '</td><td>' . app_text(g($l, 'action')) . '</td><td>' . app_text(g($l, 'ip_address')) . '</td></tr>'; }
-        echo '</table></div>';
-    }
-}
-
-elseif ($tab === 'chat') {
-    $r = app_user_chat($id, 200);
-    $items = app_items($r);
-    echo app_error_box($r) . '<p class="muted">Read-only. Latest 200 messages sent by this player.</p><div class="tbl-wrap"><table><tr><th>When</th><th>Room</th><th>Message</th></tr>';
-    foreach ($items as $c) { echo '<tr><td class="nowrap">' . app_dt(g($c, 'created_at')) . '</td><td><code class="j">' . e(substr((string) g($c, 'room_id', ''), 0, 8)) . '</code></td><td class="chat">' . e(g($c, 'message', '')) . '</td></tr>'; }
-    if (!$items) { echo '<tr><td colspan="3" class="muted">' . ($r['ok'] ? 'No chat messages.' : 'Could not load chat.') . '</td></tr>'; }
-    echo '</table></div>';
-}
-
-elseif ($tab === 'moderation') {
-    $r = app_user_reports($id);
-    echo app_error_box($r);
-    $rep = function ($rows, $otherKey, $otherIdKeys, $title) {
-        echo '<h2>' . e($title) . ' (' . count($rows) . ')</h2><div class="tbl-wrap"><table><tr><th>When</th><th>' . ($otherKey === 'reporter_username' ? 'Reported by' : 'Reported player') . '</th><th>Reason</th><th>Details</th><th>Status</th><th>Screenshot</th><th>Admin notes</th></tr>';
-        foreach ($rows as $x) {
-            $shot = g($x, 'screenshot_path');
-            echo '<tr><td class="nowrap">' . app_dt(g($x, 'created_at')) . '</td><td>' . app_user_link(gx($x, $otherIdKeys), g($x, $otherKey)) . '</td><td>' . app_text(gx($x, array('reason', 'category'))) . '</td>';
-            echo '<td class="chat">' . app_text(gx($x, array('details', 'description', 'message'))) . '</td><td>' . app_badge(g($x, 'status')) . '</td>';
-            echo '<td>' . ($shot ? '<a href="/admin/app/evidence/?path=' . e(rawurlencode($shot)) . '" target="_blank" rel="noopener">Open</a>' : '<span class="muted">-</span>') . '</td><td>' . app_text(g($x, 'admin_notes')) . '</td></tr>';
+if ($tab === 'profile') {
+    if ($p) {
+        echo '<h2>Game profile <span class="muted" style="font-size:13px">(table drotix.' . e($PT) . ': edit any field)</span></h2>';
+        echo '<form method="post" class="panel" data-confirm="Save the changes to this profile?">' . hid($id, 'profile', 'save_profile') . '<div class="fgrid">';
+        foreach ($PC as $c => $f) {
+            if ($c === $IDC) { continue; }
+            echo '<label>' . e($c) . ' <span class="muted" style="font-weight:400">' . e($f) . '</span>' . app_input($c, $f, array_key_exists($c, $p) ? $p[$c] : null) . '</label>';
         }
-        if (!$rows) { echo '<tr><td colspan="7" class="muted">None.</td></tr>'; }
-        echo '</table></div>';
-    };
-    $rep(app_items($r, 'received'), 'reporter_username', array('reporter_id', 'reporter_user_id'), 'Reports received');
-    $rep(app_items($r, 'made'), 'reported_username', array('reported_id', 'reported_user_id'), 'Reports made');
-    echo '<h2>Suspensions</h2>' . tbl_generic((array) g($u, 'moderation.suspensions', array()), 'No suspensions.');
-    echo '<h2>Appeals</h2>' . tbl_generic((array) g($u, 'moderation.appeals', array()), 'No appeals.');
+        echo '</div><button class="btn" type="submit">Save profile</button></form>';
+    }
+    if ($a) {
+        echo '<h2>Login account (Supabase Auth)</h2><div class="panel"><dl class="kv">';
+        foreach (array('email', 'phone', 'created_at', 'last_sign_in_at', 'email_confirmed_at', 'banned_until', 'role') as $k) { echo '<dt>' . e($k) . '</dt><dd>' . app_cell($k, g($a, $k)) . '</dd>'; }
+        echo '<dt>providers</dt><dd>' . e(implode(', ', $providers)) . '</dd><dt>user metadata</dt><dd>' . app_cell('m', g($a, 'user_metadata')) . '</dd></dl></div>';
+    }
 }
-
-elseif ($tab === 'audit') {
-    $per = 50;
-    $r = app_list_audit($id, $per, ($page - 1) * $per);
-    $items = app_items($r);
-    echo app_error_box($r) . '<div class="tbl-wrap"><table><tr><th>When</th><th>Action</th><th>Admin</th><th>Target</th><th>Details</th></tr>';
-    foreach ($items as $a) { echo '<tr><td class="nowrap">' . app_dt(g($a, 'created_at')) . '</td><td>' . app_badge(g($a, 'action')) . '</td><td>' . app_text(g($a, 'admin_username')) . '</td><td>' . app_text(g($a, 'target_username')) . '</td><td>' . app_text(g($a, 'details')) . '</td></tr>'; }
-    if (!$items) { echo '<tr><td colspan="5" class="muted">' . ($r['ok'] ? 'No admin actions on this player.' : 'Could not load the audit log.') . '</td></tr>'; }
-    echo '</table></div>' . app_pager_simple($page, count($items), $per);
+elseif ($tab === 'wallet') {
+    echo '<div class="cards sm"><div class="card"><div class="n gold">' . app_num($balance) . '</div><div class="l">Balance (coins)</div>' . ($w && g($w, 'updated_at') ? '<div class="s">Updated ' . app_dt(g($w, 'updated_at')) . '</div>' : '') . '</div></div>';
+    if ($TT && ($toc = app_owner_col($TT))) {
+        $page = max(1, (int) (isset($_GET['page']) ? $_GET['page'] : 1)); $per = 50;
+        $q = array($toc => 'eq.' . $id);
+        if (array_key_exists('created_at', app_cols($TT))) { $q['order'] = 'created_at.desc'; }
+        $reason = app_get('reason', 40);
+        if ($reason !== '' && app_valid_ident($reason) && array_key_exists('reason', app_cols($TT))) { $q['reason'] = 'eq.' . $reason; }
+        if (isset($_GET['export'])) {
+            $all = array(); for ($o = 0; $o < 20000; $o += 1000) { list($ch, , ) = app_select($TT, $q, 1000, $o, false); $all = array_merge($all, $ch); if (count($ch) < 1000) { break; } }
+            csv_out('drotix_transactions_' . substr($id, 0, 8) . '.csv', $all);
+        }
+        list($rows, $total, $r) = app_select($TT, $q, $per, ($page - 1) * $per);
+        echo '<form class="row" method="get"><input type="hidden" name="id" value="' . e($id) . '"><input type="hidden" name="tab" value="wallet"><input name="reason" value="' . e($reason) . '" placeholder="Filter by reason (e.g. iap_grant)"><button class="btn sm" type="submit">Filter</button><a class="btn ghost sm" href="' . e(qs(array('export' => 1, 'page' => null))) . '">Export CSV</a><span class="muted">' . app_num($total) . ' transactions</span></form>';
+        echo app_err_box($r) . app_rows_table($rows, $TT, 'No transactions.') . ($total !== null ? pager($page, $total, $per) : '');
+    } else { echo '<p class="muted">No transactions table found.</p>'; }
+}
+elseif ($tab === 'data') {
+    echo '<p class="muted">Every app table that has rows linked to this player (latest 10 each). Click a table name to see all rows, edit or delete.</p>';
+    foreach (app_tables() as $t => $info) {
+        if ($t === $PT) { continue; }
+        $ucs = app_user_cols($t);
+        if (!$ucs) { continue; }
+        $ors = array(); foreach ($ucs as $c) { $ors[] = $c . '.eq.' . $id; }
+        $q = array('or' => '(' . implode(',', $ors) . ')');
+        if (isset($info['cols']['created_at'])) { $q['order'] = 'created_at.desc'; }
+        list($rows, $total, $r) = app_select($t, $q, 10, 0);
+        if (!$r['ok'] || !$total) { continue; }
+        echo '<h2><a href="/admin/app/data/?t=' . e(rawurlencode($t)) . '&amp;user=' . e($id) . '">' . e($t) . '</a> <span class="muted" style="font-size:13px">' . app_num($total) . ' rows</span></h2>' . app_rows_table($rows, $t);
+    }
 }
 admin_foot();

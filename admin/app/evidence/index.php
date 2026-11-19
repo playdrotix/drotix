@@ -1,13 +1,12 @@
 <?php
-/* App admin: open a report screenshot from the private bucket via a 5-minute signed URL. */
+/* Mobile App: open a report screenshot from the private bucket via a 5-minute signed URL. */
 require __DIR__ . '/../../../includes/app_admin_api.php';
 app_require();
 
-$path = isset($_GET['path']) ? (string) $_GET['path'] : '';
-$url = app_evidence_url($path);
+$url = app_evidence_url(isset($_GET['path']) ? (string) $_GET['path'] : '');
 if ($url === '') {
-    app_head('Screenshot', 'reports');
-    echo '<div class="flash err">Could not open this screenshot (missing file or no permission on the bucket).</div>';
+    app_head('Screenshot', 'data');
+    echo '<div class="flash err">Could not open this screenshot (file missing).</div>';
     admin_foot(); exit;
 }
 header('Location: ' . $url, true, 302);

@@ -287,6 +287,42 @@
       "lastAccessed": "2026-11-19T10:36:04.711Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T10:36:04.711Z"
+    },
+    "cmd-1795085470045": {
+      "key": "cmd-1795085470045",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && grep -n \\\"'label'\\\" includes/config.php | sed -E \\\"s/'key' *=> *'[^']*'/'key'=>[REDACTED]/g\\\"; sed -n 1,65p admin/explorer/index.php | head -40\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:51:10.045Z",
+      "lastAccessed": "2026-11-19T10:51:10.045Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:51:10.045Z"
+    },
+    "cmd-1795085486201": {
+      "key": "cmd-1795085486201",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:51:26.201Z",
+      "lastAccessed": "2026-11-19T10:51:26.201Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:51:26.201Z"
+    },
+    "cmd-1795085782059": {
+      "key": "cmd-1795085782059",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; R=\\\"/c/Users/chandra kumari/Documents/Github/drotix\\\"\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:56:22.059Z",
+      "lastAccessed": "2026-11-19T10:56:22.059Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:56:22.059Z"
+    },
+    "cmd-1795085792518": {
+      "key": "cmd-1795085792518",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:56:32.518Z",
+      "lastAccessed": "2026-11-19T10:56:32.518Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:56:32.518Z"
     }
   },
   "version": "3.0.0"

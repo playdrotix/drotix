@@ -130,18 +130,17 @@ only in the same browser. Browsers with Do Not Track on are not counted and get 
 * Messages sent before v3 have no visitor ID and can only be answered by email. Test with a NEW message.
 
 ## Mobile App section (/admin/app/): manage the DROTIX mobile game
-Sidebar -> **Mobile App**: all registered app players; click a player to see everything about them
-(matches, coins, tournaments, logins, chat, reports, audit) and act on them. Also Stats, Reports,
-Appeals, Tournaments, Broadcast and Audit log. Uses only the `drotix.admin_*` RPC functions
-(no tables, no SQL). All calls live in `includes/app_admin_api.php`.
+Sidebar -> **Mobile App**. ONE login only: whoever is logged in to /admin/ sees and manages everything,
+no second sign-in. The server reads/writes the app data (Supabase schema `drotix` + Supabase Auth)
+with the SECRET (service) key; the key never reaches the browser. Tables and columns are discovered
+automatically, so new app tables appear by themselves.
 
-Single login: after the normal /admin/ login there is NO second login. The server connects to Supabase
-by itself with one app-admin account. Setup (once), add to `includes/config.php` on the server:
+- Players: list (search by username, email, player no, user id), click a player to open their page:
+  edit every profile field, change email, change password, verify email, suspend / block login,
+  reinstate, adjust coins, send notification, delete account, wallet history (CSV), all linked data.
+- All data: every drotix table: filter, sort, edit, add, delete rows, CSV export.
+- Stats and an audit log of every change made here.
 
-    'app_admin' => array(
-        'anon_key' => 'sb_publishable_...',   // Supabase -> Project Settings -> API Keys -> Publishable key (NOT the secret key)
-        'email'    => 'admin@playdrotix.in',  // a Supabase Auth account of the app with drotix.profiles.is_admin = true
-        'password' => '...',
-    ),
-
-The password and the Supabase session stay on the server; they never reach the browser.
+Setup (once, on the server): copy `includes/app_config.sample.php` to `includes/app_config.php`
+and paste the Supabase **Secret key** (sb_secret_...) as `service_key`. `app_config.php` is in .gitignore.
+The `drotix` schema must be listed in Supabase -> Project Settings -> Data API -> Exposed schemas.

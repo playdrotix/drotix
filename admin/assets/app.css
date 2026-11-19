@@ -33,3 +33,6 @@ code.j{font-size:12px;color:var(--m);word-break:break-all}
 button[disabled],.btn[disabled]{opacity:.55;cursor:wait}
 .nowrap{white-space:nowrap}
 .chat{white-space:pre-wrap;max-width:520px}
+label.chk{display:flex;gap:8px;align-items:center;font-weight:600;font-size:13px;color:var(--m)}label.chk input{width:auto}
+.cellv{display:inline-block;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.fgrid textarea{min-height:60px}
