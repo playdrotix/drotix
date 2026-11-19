@@ -341,6 +341,42 @@
       "lastAccessed": "2026-11-19T11:09:06.949Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T11:09:06.949Z"
+    },
+    "cmd-1795087545187": {
+      "key": "cmd-1795087545187",
+      "value": "{\"command\":\"P=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; R=\\\"/c/Users/chandra kumari/Documents/Github/drotix\\\"\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T11:25:45.187Z",
+      "lastAccessed": "2026-11-19T11:25:45.187Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T11:25:45.187Z"
+    },
+    "cmd-1795087556584": {
+      "key": "cmd-1795087556584",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T11:25:56.584Z",
+      "lastAccessed": "2026-11-19T11:25:56.584Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T11:25:56.584Z"
+    },
+    "cmd-1795087727967": {
+      "key": "cmd-1795087727967",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; R=\\\"/c/Users/chandra kumari/Documents/Github/drotix\\\"\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T11:28:47.967Z",
+      "lastAccessed": "2026-11-19T11:28:47.967Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T11:28:47.967Z"
+    },
+    "cmd-1795087736723": {
+      "key": "cmd-1795087736723",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && sed -i '76{/t:/d}' admin/app/data/index.php && sed -n 74,77p admin/app/data/index.php && grep -n \\\"array_key_exists('seed'\\\" admin/app/tournaments/index.php | head -2 && git status --short | grep -v -e claude-flow -e swarm\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T11:28:56.723Z",
+      "lastAccessed": "2026-11-19T11:28:56.723Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T11:28:56.723Z"
     }
   },
   "version": "3.0.0"

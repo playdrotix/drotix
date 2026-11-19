@@ -36,3 +36,12 @@ button[disabled],.btn[disabled]{opacity:.55;cursor:wait}
 label.chk{display:flex;gap:8px;align-items:center;font-weight:600;font-size:13px;color:var(--m)}label.chk input{width:auto}
 .cellv{display:inline-block;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
 .fgrid textarea{min-height:60px}
+label.fl{display:grid;gap:6px;font-weight:600;font-size:13px;color:var(--m)}
+.champ{margin-top:14px;padding:12px 16px;border:1px solid var(--gd);border-radius:12px;background:rgba(255,194,77,.08);font-weight:700;font-size:16px}
+tr.win td{background:rgba(255,194,77,.07)}tr.flag td{background:rgba(255,122,154,.07)}
+.bracket{display:flex;gap:18px;overflow-x:auto;padding-bottom:8px}
+.bround{min-width:230px;display:flex;flex-direction:column;gap:12px}
+.bhead{color:var(--tl);font-size:12px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
+.bmatch{background:var(--s);border:1px solid var(--b);border-radius:12px;overflow:hidden}
+.bp{padding:8px 12px;border-bottom:1px solid var(--b);font-size:14px}.bp.bw{background:rgba(47,184,180,.12);font-weight:700}.bp.bl{opacity:.6}
+.bmeta{padding:6px 12px;font-size:12px;color:var(--m)}

@@ -65,18 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $susp = $act === 'suspend';
         $reason = app_post('reason', 500);
         if ($susp && $reason === '') { flash_set('err', 'A reason is required.'); redirect($back); }
-        $patch = array();
-        if (isset($PC['account_status'])) { $patch['account_status'] = $susp ? 'suspended' : 'active'; }
-        if (isset($PC['suspension_reason'])) { $patch['suspension_reason'] = $susp ? $reason : null; }
-        if (isset($PC['suspended_at'])) { $patch['suspended_at'] = $susp ? date('c') : null; }
-        $msgs = array();
-        if ($patch) { $r = app_db('PATCH', $PT, array($IDC => 'eq.' . $uid), $patch, 'return=minimal'); if (!$r['ok']) { $fail($r, 'Profile update'); redirect($back); } $msgs[] = 'profile'; }
-        if (!empty($_POST['auth_ban']) || !$susp) {
-            $r = app_auth_update($uid, array('ban_duration' => $susp ? '876000h' : 'none'));
-            if ($r['ok']) { $msgs[] = $susp ? 'login blocked' : 'login unblocked'; } elseif ($susp) { $msgs[] = 'login block failed: ' . $r['error']; }
-        }
-        app_log($act, $uid, $reason);
-        flash_set('ok', ($susp ? 'Player suspended' : 'Player reinstated') . ' (' . implode(', ', $msgs) . ').');
+        $r = $susp ? app_rpc('admin_suspend_user', array('p_user_id' => $uid, 'p_reason' => $reason, 'p_report_id' => null, 'p_admin_notes' => null))
+                   : app_rpc('admin_reinstate_user', array('p_user_id' => $uid, 'p_notes' => null));
+        if (!$r['ok']) { $r = app_set_status($uid, $susp, $reason); }
+        elseif ($susp && !empty($_POST['auth_ban'])) { app_auth_update($uid, array('ban_duration' => '876000h')); }
+        elseif (!$susp) { app_auth_update($uid, array('ban_duration' => 'none')); }
+        if ($r['ok']) { app_log($act, $uid, $reason); flash_set('ok', $susp ? 'Player suspended.' : 'Player reinstated.'); } else { $fail($r, $susp ? 'Suspend' : 'Reinstate'); }
     } elseif ($act === 'wallet') {
         $amount = (int) (isset($_POST['amount']) ? $_POST['amount'] : 0);
         $dir = (isset($_POST['direction']) && $_POST['direction'] === 'debit') ? 'debit' : 'credit';
@@ -114,13 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($act === 'notify') {
         $t = app_post('title', 80); $b = app_post('body', 500);
         if ($t === '' || $b === '') { flash_set('err', 'Title and message are required.'); redirect($back); }
-        $r = app_has_rpc('admin_send_notification') ? app_rpc('admin_send_notification', array('p_user_id' => $uid, 'p_title' => $t, 'p_body' => $b)) : array('ok' => false, 'error' => 'no function');
-        if (!$r['ok']) {
-            $nt = app_find_table(array('title', 'body'), '/notif/');
-            $oc = $nt ? app_owner_col($nt) : null;
-            $r = ($nt && $oc) ? app_db('POST', $nt, array(), array($oc => $uid, 'title' => $t, 'body' => $b), 'return=minimal') : $r;
-        }
-        if ($r['ok']) { app_log('notify', $uid, $t); flash_set('ok', 'Notification sent.'); } else { $fail($r, 'Notification'); }
+        $n = app_notify($uid, $t, $b);
+        if ($n['ok']) { app_log('notify', $uid, $t); flash_set('ok', 'Notification sent' . ($n['via'] === 'game' ? ' (push + in-app).' : ' (in-app).')); } else { flash_set('err', 'Notification failed: ' . $n['error']); }
     } elseif ($act === 'delete_account') {
         if (strtoupper(trim(isset($_POST['confirm_word']) ? (string) $_POST['confirm_word'] : '')) !== 'DELETE') { flash_set('err', 'Type DELETE to confirm.'); redirect($back); }
         $r = app_auth_delete($uid);

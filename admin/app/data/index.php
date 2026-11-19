@@ -73,7 +73,6 @@ if ($t === '') {
 $cols = app_cols($t);
 $pk = app_pk($t);
 $sub = 'data';
-foreach (array('/report/', '/appeal/', '/^tournaments?$/') as $re) { if (preg_match($re, $t)) { $sub = 't:' . $t; } }
 
 /* ---------- edit one row ---------- */
 if (isset($_GET['edit']) && $pk) {

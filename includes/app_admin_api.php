@@ -33,7 +33,7 @@ function app_config_problem() {
 function app_headers($extra = array(), $hasBody = false) {
     list(, $key) = app_base();
     $h = array('apikey: ' . $key, 'Accept: application/json');
-    if (strpos($key, 'eyJ') === 0) { $h[] = 'Authorization: Bearer ' . $key; }
+    if (strpos($key, 'eyJ') === 0 && !isset($extra['Authorization'])) { $h[] = 'Authorization: Bearer ' . $key; }
     if ($hasBody) { $h[] = 'Content-Type: application/json'; }
     foreach ($extra as $k => $v) { $h[] = $k . ': ' . $v; }
     return $h;
@@ -112,10 +112,52 @@ function app_count($table, $query = array()) {
     list(, $t, $r) = app_select($table, $query, 1, 0, true);
     return $r['ok'] ? $t : null;
 }
-/** Call a drotix RPC with the service key (some admin functions may refuse a service caller). */
+/**
+ * Session of an app admin (drotix profiles.is_admin = true), created by the SERVER with the service key:
+ * admin generate_link (no email is sent) + verify -> access token. No password, no login screen.
+ * The game's own admin_* functions check that the caller is an app admin, so they need this token.
+ * Optional: 'app_admin_email' in includes/config.php picks which admin account is used.
+ */
+function app_admin_token() {
+    $c = isset($_SESSION['app_admin_tok']) ? $_SESSION['app_admin_tok'] : null;
+    if ($c && $c['exp'] - 120 > time()) { return $c['token']; }
+    if ($c && isset($c['fail']) && $c['fail'] > time() - 120) { return null; }   // do not retry every request
+    $email = (string) cfg('app_admin_email', '');
+    if ($email === '') {
+        $pt = app_profiles_table(); $pc = app_cols($pt);
+        if (isset($pc['is_admin'])) {
+            list($rows, , ) = app_select($pt, array('is_admin' => 'eq.true', 'select' => app_profile_idcol()), 5, 0, false);
+            foreach ($rows as $r) { $u = app_auth_get($r[app_profile_idcol()]); if ($u['ok'] && g($u['data'], 'email')) { $email = $u['data']['email']; break; } }
+        }
+    }
+    $tok = null;
+    if ($email !== '') {
+        $l = app_http('POST', '/auth/v1/admin/generate_link', array('type' => 'magiclink', 'email' => $email));
+        $hash = gx($l['data'], array('hashed_token', 'properties.hashed_token'));
+        if ($l['ok'] && $hash) {
+            foreach (array('magiclink', 'email') as $ty) {
+                $v = app_http('POST', '/auth/v1/verify', array('type' => $ty, 'token_hash' => $hash));
+                if ($v['ok'] && !empty($v['data']['access_token'])) {
+                    $tok = $v['data']['access_token'];
+                    $_SESSION['app_admin_tok'] = array('token' => $tok, 'exp' => time() + (int) g($v['data'], 'expires_in', 3600), 'email' => $email);
+                    break;
+                }
+            }
+        }
+    }
+    if ($tok === null) { $_SESSION['app_admin_tok'] = array('fail' => time(), 'exp' => 0, 'token' => null, 'email' => $email); }
+    return $tok;
+}
+function app_admin_email() { return isset($_SESSION['app_admin_tok']['email']) ? (string) $_SESSION['app_admin_tok']['email'] : ''; }
+
+/** Call a drotix RPC: as an app admin when possible, otherwise with the service key. */
 function app_rpc($fn, $params = array()) {
     if (!app_valid_ident($fn)) { return array('ok' => false, 'data' => null, 'error' => 'Invalid function'); }
-    $r = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA));
+    $h = array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA);
+    $tok = strpos($fn, 'admin_') === 0 ? app_admin_token() : null;
+    if ($tok) { $h['Authorization'] = 'Bearer ' . $tok; }
+    $r = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, $h);
+    if (!$r['ok'] && $tok && $r['status'] === 401) { unset($_SESSION['app_admin_tok']); }
     if ($r['ok'] && is_array($r['data']) && isset($r['data']['status']) && $r['data']['status'] === 'error') {
         $r['ok'] = false; $r['error'] = isset($r['data']['message']) ? (string) $r['data']['message'] : 'Error';
     }
@@ -129,25 +171,27 @@ function app_rpc($fn, $params = array()) {
  */
 function app_schema() {
     if ($GLOBALS['__app_schema'] !== null) { return $GLOBALS['__app_schema']; }
-    $c = isset($_SESSION['app_schema']) ? $_SESSION['app_schema'] : null;
+    $c = isset($_SESSION['app_schema3']) ? $_SESSION['app_schema3'] : null;
     if (!$c || $c['at'] < time() - 600 || isset($_GET['refresh_schema'])) {
         $r = app_http('GET', '/rest/v1/', null, array('Accept-Profile' => APP_SCHEMA, 'Accept' => 'application/openapi+json'));
         $c = array('at' => time(), 'ok' => false, 'error' => $r['error'], 'tables' => array(), 'rpc' => array());
         if ($r['ok'] && is_array($r['data'])) {
             $c['ok'] = true;
             foreach ((array) g($r['data'], 'definitions', array()) as $t => $def) {
-                $cols = array(); $pk = null;
+                $cols = array(); $pk = null; $enums = array(); $defaults = array();
                 foreach ((array) g($def, 'properties', array()) as $col => $p) {
                     $cols[$col] = (string) gx($p, array('format', 'type'), 'text');
                     if (strpos((string) g($p, 'description', ''), '<pk/>') !== false && $pk === null) { $pk = $col; }
+                    if (is_array(g($p, 'enum'))) { $enums[$col] = array_values($p['enum']); }
+                    if (is_array($p) && array_key_exists('default', $p)) { $defaults[$col] = true; }
                 }
                 if ($pk === null && isset($cols['id'])) { $pk = 'id'; }
-                $c['tables'][$t] = array('cols' => $cols, 'pk' => $pk);
+                $c['tables'][$t] = array('cols' => $cols, 'pk' => $pk, 'required' => array_values((array) g($def, 'required', array())), 'enums' => $enums, 'defaults' => $defaults);
             }
             ksort($c['tables']);
             foreach (array_keys((array) g($r['data'], 'paths', array())) as $p) { if (strpos($p, '/rpc/') === 0) { $c['rpc'][] = substr($p, 5); } }
         }
-        if ($c['ok']) { $_SESSION['app_schema'] = $c; }
+        if ($c['ok']) { $_SESSION['app_schema3'] = $c; }
     }
     return $GLOBALS['__app_schema'] = $c;
 }
@@ -264,6 +308,80 @@ function app_patch_from_post($table, $row) {
     }
     return array($patch, $errs);
 }
+function app_required($t) { $ts = app_tables(); return isset($ts[$t]['required']) ? $ts[$t]['required'] : array(); }
+function app_enum($t, $col) { $ts = app_tables(); return isset($ts[$t]['enums'][$col]) ? $ts[$t]['enums'][$col] : array(); }
+/** Pick a value for a column: allowed enum value / value already used in the table, preferring $prefer. */
+function app_pick_value($t, $col, $prefer) {
+    $opts = app_enum($t, $col);
+    if (!$opts) {
+        list($rows, , ) = app_select($t, array('select' => $col, $col => 'not.is.null', 'order' => $col . '.asc'), 300, 0, false);
+        foreach ($rows as $r) { if (isset($r[$col]) && is_scalar($r[$col]) && !in_array($r[$col], $opts, true)) { $opts[] = $r[$col]; } }
+    }
+    foreach ((array) $prefer as $p) { if (in_array($p, $opts, true)) { return $p; } }
+    foreach ((array) $prefer as $p) { foreach ($opts as $o) { if (is_string($o) && stripos($o, $p) !== false) { return $o; } } }
+    return $opts ? $opts[0] : (is_array($prefer) ? $prefer[0] : $prefer);
+}
+/** Fill required columns that have no value and no database default (enum / text / json / bool / number). */
+function app_fill_required($t, $row, $hints = array()) {
+    $ts = app_tables(); $info = isset($ts[$t]) ? $ts[$t] : null;
+    if (!$info) { return $row; }
+    foreach ($info['required'] as $c) {
+        if (array_key_exists($c, $row) || isset($info['defaults'][$c]) || $c === $info['pk']) { continue; }
+        $f = $info['cols'][$c];
+        if (isset($hints[$c])) { $row[$c] = app_pick_value($t, $c, $hints[$c]); }
+        elseif (isset($info['enums'][$c])) { $row[$c] = $info['enums'][$c][0]; }
+        elseif ($f === 'boolean') { $row[$c] = false; }
+        elseif (app_is_json_fmt($f)) { $row[$c] = new stdClass(); }
+        elseif (app_is_num_fmt($f)) { $row[$c] = 0; }
+        elseif (strpos($f, 'timestamp') === 0) { $row[$c] = date('c'); }
+        elseif ($f !== 'uuid') { $row[$c] = app_pick_value($t, $c, array('admin', 'system', 'general')); }
+    }
+    return $row;
+}
+function app_notif_table() { return app_has_table('notifications') ? 'notifications' : app_find_table(array('title', 'body'), '/notif/'); }
+/**
+ * Send a notification. $userId null = every player. Tries the game's function first (push + in-app),
+ * then writes rows to the notifications table directly (in-app). Returns array(ok, error, count|null, via).
+ */
+function app_notify($userId, $title, $body) {
+    if (app_has_rpc('admin_send_notification')) {
+        $r = app_rpc('admin_send_notification', array('p_user_id' => $userId, 'p_title' => $title, 'p_body' => $body));
+        if ($r['ok']) { return array('ok' => true, 'error' => '', 'count' => gx($r['data'], array('sent', 'recipients', 'count')), 'via' => 'game'); }
+        $rpcErr = $r['error'];
+    }
+    $nt = app_notif_table(); $oc = $nt ? app_owner_col($nt) : null;
+    if (!$nt || !$oc) { return array('ok' => false, 'error' => isset($rpcErr) ? $rpcErr : 'No notifications table found.', 'count' => null, 'via' => ''); }
+    $hints = array('type' => array('admin', 'system', 'announcement', 'broadcast', 'admin_message', 'info', 'general'), 'kind' => array('admin', 'system'), 'category' => array('admin', 'system'));
+    $ids = array();
+    if ($userId !== null) { $ids = array($userId); }
+    else {
+        $pt = app_profiles_table(); $idc = app_profile_idcol(); $q = array('select' => $idc);
+        if (array_key_exists('account_status', app_cols($pt))) { $q['account_status'] = 'eq.active'; }
+        for ($o = 0; $o < 200000; $o += 1000) { list($rows, , ) = app_select($pt, $q, 1000, $o, false); foreach ($rows as $r) { $ids[] = $r[$idc]; } if (count($rows) < 1000) { break; } }
+    }
+    $base = app_fill_required($nt, array($oc => $ids ? $ids[0] : null, 'title' => $title, 'body' => $body), $hints);
+    $sent = 0;
+    foreach (array_chunk($ids, 500) as $chunk) {
+        $rows = array(); foreach ($chunk as $id) { $b = $base; $b[$oc] = $id; $rows[] = $b; }
+        $r = app_db('POST', $nt, array(), $rows, 'return=minimal');
+        if (!$r['ok']) { return array('ok' => false, 'error' => $r['error'], 'count' => $sent, 'via' => 'table'); }
+        $sent += count($chunk);
+    }
+    return array('ok' => true, 'error' => '', 'count' => $sent, 'via' => 'table');
+}
+/** Change a profile's account status directly (fallback when the game's functions are not usable). */
+function app_set_status($uid, $suspend, $reason) {
+    $pt = app_profiles_table(); $pc = app_cols($pt); $patch = array();
+    if (isset($pc['account_status'])) { $patch['account_status'] = $suspend ? 'suspended' : 'active'; }
+    if (isset($pc['suspension_reason'])) { $patch['suspension_reason'] = $suspend ? $reason : null; }
+    if (isset($pc['suspended_at'])) { $patch['suspended_at'] = $suspend ? date('c') : null; }
+    $r = $patch ? app_db('PATCH', $pt, array(app_profile_idcol() => 'eq.' . $uid), $patch, 'return=minimal') : array('ok' => true, 'error' => '');
+    app_auth_update($uid, array('ban_duration' => $suspend ? '876000h' : 'none'));
+    return $r;
+}
+/** Find a table whose name matches $re and has all $cols. */
+function app_table_like($re, $cols = array()) { return app_find_table($cols, $re); }
+
 function app_log($action, $target = '', $details = '') { audit_log('app_' . $action, $target, is_array($details) ? json_encode($details, JSON_UNESCAPED_UNICODE) : (string) $details); }
 
 /* ================= view helpers ================= */
@@ -359,14 +477,11 @@ function app_require() {
 function app_head($title, $sub) {
     header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; form-action 'self'; frame-ancestors 'none'", true);
     admin_head($title, 'app');
-    $tabs = array('users' => array('/admin/app/users/', 'Players'), 'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'));
-    foreach (array('reports' => '/report/', 'appeals' => '/appeal/', 'tournaments' => '/^tournaments?$/') as $k => $re) {
-        if (!empty($GLOBALS['__app_schema']['tables'])) {
-            foreach (array_keys($GLOBALS['__app_schema']['tables']) as $t) { if (preg_match($re, $t)) { $tabs['t:' . $t] = array('/admin/app/data/?t=' . rawurlencode($t), ucfirst(str_replace('_', ' ', $t))); break; } }
-        }
-    }
+    $tabs = array('users' => array('/admin/app/users/', 'Players'), 'tour' => array('/admin/app/tournaments/', 'Tournaments'),
+                  'reports' => array('/admin/app/reports/', 'Reports'), 'appeals' => array('/admin/app/appeals/', 'Appeals'),
+                  'cast' => array('/admin/app/broadcast/', 'Broadcast'), 'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'));
     $tabs['audit'] = array('/admin/app/audit/', 'Audit log');
-    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=2"><script src="/admin/assets/app.js?v=2" defer></script>';
+    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=3"><script src="/admin/assets/app.js?v=3" defer></script>';
     echo '<div class="apptop"><nav class="subnav">';
     foreach ($tabs as $k => $t) { echo '<a href="' . e($t[0]) . '"' . ($k === $sub ? ' class="on"' : '') . '>' . e($t[1]) . '</a>'; }
     echo '</nav></div>';
