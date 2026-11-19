@@ -4,10 +4,10 @@
  *
  * - Calls only the drotix.admin_* RPC functions (never tables, never SQL).
  * - Single login: once the website admin is logged in to /admin/, the SERVER signs in to Supabase
- *   automatically with one app-admin account from includes/config.php ('app_admin' => email/password).
+ *   automatically with one app-admin account from includes/app_config.php (email/password).
  *   No second login screen. Requests use the PUBLISHABLE / anon key + that account's access token, so the
  *   database still checks drotix.profiles.is_admin. The service_role / secret key is NEVER used here.
- * - Credentials and tokens stay on the server (config.php + PHP session); they never reach the browser.
+ * - Credentials and tokens stay on the server (app_config.php + PHP session); they never reach the browser.
  *
  * Every RPC wrapper returns an AppResult:
  *   array('ok' => bool, 'data' => array|null, 'error' => string, 'forbidden' => bool)
@@ -17,27 +17,39 @@ require_once __DIR__ . '/admin_layout.php';
 const APP_SCHEMA = 'drotix';
 const APP_EVIDENCE_BUCKET = 'drotix-report-evidence';
 
-/* ---------------- config ---------------- */
+/* ---------------- config ----------------
+ * Mobile app connection lives in its OWN file: includes/app_config.php (copy of app_config.sample.php).
+ * (Fallback: an 'app_admin' block inside includes/config.php.) */
+function app_conf() {
+    static $c = null;
+    if ($c === null) {
+        $f = __DIR__ . '/app_config.php';
+        $c = is_file($f) ? require $f : cfg('app_admin', array());
+        if (!is_array($c)) { $c = array(); }
+    }
+    return $c;
+}
 function app_cfg() {
-    $c = cfg('app_admin', array());
+    $c = app_conf();
     $url = !empty($c['supabase_url']) ? $c['supabase_url'] : cfg('supabase_url', '');
     $key = isset($c['anon_key']) ? (string) $c['anon_key'] : '';
     return array(rtrim((string) $url, '/'), $key);
 }
 /** Supabase app-admin account the server signs in with: array(email, password). */
 function app_cfg_account() {
-    $c = cfg('app_admin', array());
+    $c = app_conf();
     return array(isset($c['email']) ? (string) $c['email'] : '', isset($c['password']) ? (string) $c['password'] : '');
 }
 /** '' when OK, otherwise a message telling what to fix. Refuses secret / service_role keys. */
 function app_config_problem() {
     list($u, $k) = app_cfg();
     if ($u === '') { return 'Supabase URL is missing in includes/config.php.'; }
-    if ($k === '' || strpos($k, 'PASTE_') === 0) { return "Set 'app_admin' => array('anon_key' => 'sb_publishable_...') in includes/config.php (Supabase -> Project Settings -> API Keys -> Publishable key)."; }
+    if (!is_file(__DIR__ . '/app_config.php') && !cfg('app_admin')) { return 'includes/app_config.php is missing. On the server copy includes/app_config.sample.php to includes/app_config.php and fill it in.'; }
+    if ($k === '' || strpos($k, 'PASTE_') === 0) { return "Fill 'anon_key' in includes/app_config.php (Supabase -> Project Settings -> API Keys -> Publishable key)."; }
     $kind = sb_key_kind($k);
-    if (in_array($kind[0], array('secret', 'service_role'), true)) { return 'app_admin.anon_key must be the PUBLISHABLE / anon key, never the secret or service_role key.'; }
+    if (in_array($kind[0], array('secret', 'service_role'), true)) { return "'anon_key' in includes/app_config.php must be the PUBLISHABLE / anon key, never the secret or service_role key."; }
     list($em, $pw) = app_cfg_account();
-    if ($em === '' || $pw === '' || strpos($pw, 'PASTE_') === 0) { return "Set 'app_admin' => array('email' => ..., 'password' => ...) in includes/config.php: a Supabase account that is an app admin (drotix.profiles.is_admin = true)."; }
+    if ($em === '' || $pw === '' || strpos($pw, 'PASTE_') === 0) { return "Fill 'email' and 'password' in includes/app_config.php: a Supabase account of the app that is an app admin (drotix.profiles.is_admin = true)."; }
     return '';
 }
 
@@ -87,7 +99,7 @@ function app_auto_sign_in() {
     if (($p = app_config_problem()) !== '') { return $p; }
     list($email, $password) = app_cfg_account();
     list($st, $d, $err) = app_http('POST', '/auth/v1/token?grant_type=password', array('email' => $email, 'password' => $password));
-    if ($st !== 200 || empty($d['access_token'])) { return 'Supabase sign-in for the app-admin account failed: ' . ($err !== '' ? $err : 'HTTP ' . $st) . '. Check app_admin email/password in includes/config.php.'; }
+    if ($st !== 200 || empty($d['access_token'])) { return 'Supabase sign-in for the app-admin account failed: ' . ($err !== '' ? $err : 'HTTP ' . $st) . '. Check email/password in includes/app_config.php.'; }
     app_session_store($d);
     return '';
 }
@@ -111,9 +123,7 @@ function app_require() {
     if (app_token() === null) {
         app_head('Mobile App', 'users');
         echo '<div class="flash err"><b>The Mobile App section is not connected yet.</b> ' . e($GLOBALS['__app_auth_error']) . '</div>';
-        echo '<div class="panel"><p style="margin-top:0">Add this inside <code>return array(</code> in <code>includes/config.php</code> on the server:</p><pre class="msg">'
-            . e("'app_admin' => array(\n    'anon_key' => 'sb_publishable_...',   // Supabase -> Project Settings -> API Keys -> Publishable key\n    'email'    => 'admin@playdrotix.in', // a Supabase account that is an app admin\n    'password' => '...',\n),")
-            . '</pre></div>';
+        echo '<div class="panel"><p style="margin-top:0">Open <code>includes/app_config.php</code> on the server (copy it from <code>includes/app_config.sample.php</code> if it does not exist) and fill in: <b>anon_key</b> (Publishable key), <b>email</b> and <b>password</b> of an app-admin account.</p></div>';
         admin_foot();
         exit;
     }
@@ -256,11 +266,11 @@ function app_text($v) {
 /** Flash an RPC result after an action. */
 function app_flash_result($r, $okMsg) {
     if ($r['ok']) { flash_set('ok', $okMsg); }
-    else { flash_set('err', ($r['forbidden'] ? 'Forbidden: the app_admin account in config.php is not an app admin. ' : '') . $r['error']); }
+    else { flash_set('err', ($r['forbidden'] ? 'Forbidden: the account in includes/app_config.php is not an app admin. ' : '') . $r['error']); }
 }
 function app_error_box($r) {
     if ($r['ok']) { return ''; }
-    return '<div class="flash err">' . ($r['forbidden'] ? '<b>Not allowed.</b> The app_admin account in includes/config.php is not an app admin (drotix.profiles.is_admin). ' : '') . e($r['error']) . '</div>';
+    return '<div class="flash err">' . ($r['forbidden'] ? '<b>Not allowed.</b> The account in includes/app_config.php is not an app admin (drotix.profiles.is_admin). ' : '') . e($r['error']) . '</div>';
 }
 function app_post($k, $max = 2000) { return clean_str(isset($_POST[$k]) ? $_POST[$k] : '', $max); }
 function app_get($k, $max = 200) { return clean_str(isset($_GET[$k]) ? $_GET[$k] : '', $max); }

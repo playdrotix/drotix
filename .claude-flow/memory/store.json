@@ -260,6 +260,33 @@
       "lastAccessed": "2026-11-19T10:26:48.702Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T10:26:48.702Z"
+    },
+    "cmd-1795084536434": {
+      "key": "cmd-1795084536434",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cat .gitignore 2>/dev/null; git ls-files includes; cat includes/.htaccess; grep -n \\\"app_admin\\\" includes/config.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:35:36.434Z",
+      "lastAccessed": "2026-11-19T10:35:36.434Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:35:36.434Z"
+    },
+    "cmd-1795084557341": {
+      "key": "cmd-1795084557341",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cat > includes/app_config.sample.php <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:35:57.341Z",
+      "lastAccessed": "2026-11-19T10:35:57.341Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:35:57.341Z"
+    },
+    "cmd-1795084564711": {
+      "key": "cmd-1795084564711",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && sed -i \\\"7s|from includes/config.php ('app_admin' => email/password)|from includes/app_config.php (email/password)|; 10s|(config.php + PHP session)|(app_config.php + PHP session)|\\\" includes/app_admin_api.php && sed -n '5,10p' includes/app_admin_api.php && git check-ignore includes/app_config.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:36:04.711Z",
+      "lastAccessed": "2026-11-19T10:36:04.711Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:36:04.711Z"
     }
   },
   "version": "3.0.0"
