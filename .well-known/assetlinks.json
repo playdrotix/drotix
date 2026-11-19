@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.drodify.drotix",
+      "sha256_cert_fingerprints": [
+        "9A:35:E8:4D:CB:A3:93:21:92:47:59:2A:7F:B9:D9:AA:8D:1D:C6:AB:BA:97:89:B5:0D:DC:A2:8D:F9:4E:6E:E3"
+      ]
+    }
+  }
+]

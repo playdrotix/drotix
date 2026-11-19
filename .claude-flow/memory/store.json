@@ -1,0 +1,68 @@
+{
+  "entries": {
+    "cmd-1795072634977": {
+      "key": "cmd-1795072634977",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && ls -a && cat package.json 2>/dev/null | head -40 && ls public 2>/dev/null; ls *.json *.toml *.config.* .htaccess 2>/dev/null; grep -rIl \\\"playdrotix\\\" --exclude-dir=node_modules --exclude-dir=.git . | head -20\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:17:14.977Z",
+      "lastAccessed": "2026-11-19T07:17:14.977Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:17:14.977Z"
+    },
+    "cmd-1795072638453": {
+      "key": "cmd-1795072638453",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cat .htaccess && echo ---- && cat deploy/nginx.conf && echo ---- && ls deploy assets assets/img api && head -60 README.md && head -40 index.html && ls .well-known 2>/dev/null\",\"exitCode\":2,\"success\":false}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:17:18.453Z",
+      "lastAccessed": "2026-11-19T07:17:18.453Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:17:18.453Z"
+    },
+    "cmd-1795072648845": {
+      "key": "cmd-1795072648845",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python -c \\\"import struct;d=open('assets/img/og-image.png','rb').read(32);print(struct.unpack('>II',d[16:24]))\\\"; grep -n \\\"og:\\\\|fonts.googleapis\\\\|stylesheet\\\" index.html | head; grep -rn \\\"/r/\\\\|/room/\\\" --include=*.html --include=*.php --include=*.js . | head; grep -n \\\"playdrotix\\\\|SITE_URL\\\" includes/config.php | head\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:17:28.845Z",
+      "lastAccessed": "2026-11-19T07:17:28.845Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:17:28.845Z"
+    },
+    "cmd-1795072658713": {
+      "key": "cmd-1795072658713",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && mkdir -p .well-known join && cat > .well-known/assetlinks.json <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:17:38.713Z",
+      "lastAccessed": "2026-11-19T07:17:38.713Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:17:38.713Z"
+    },
+    "cmd-1795072675044": {
+      "key": "cmd-1795072675044",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:17:55.044Z",
+      "lastAccessed": "2026-11-19T07:17:55.044Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:17:55.044Z"
+    },
+    "cmd-1795072682968": {
+      "key": "cmd-1795072682968",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:18:02.968Z",
+      "lastAccessed": "2026-11-19T07:18:02.968Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:18:02.968Z"
+    },
+    "cmd-1795072712732": {
+      "key": "cmd-1795072712732",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python -c \\\"import json;json.load(open('.well-known/assetlinks.json'));json.load(open('.well-known/apple-app-site-association'));print('json ok')\\\"; which php >/dev/null 2>&1 && (php -l join/index.php; cd /tmp 2>/dev/null; REQUEST_URI='/join/k7p2-qx' php -r '$_SERVER[\\\"REQUEST_URI\\\"]=\\\"/join/k7p2-qx\\\"; include \\\"'\\\"$PWD\\\"'/join/index.php\\\";' | grep -E \\\"class=\\\\\\\"code\\\\\\\"|og:desc|intent://\\\") || echo \\\"php not installed locally\\\"; grep -n \\\"deploy\\\" .htaccess\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:18:32.732Z",
+      "lastAccessed": "2026-11-19T07:18:32.732Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:18:32.732Z"
+    }
+  },
+  "version": "3.0.0"
+}

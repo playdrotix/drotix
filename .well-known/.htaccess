@@ -1,0 +1,18 @@
+# App Links / Universal Links files: plain JSON, no redirects, no rewrites, no auth.
+# To add the Google Play App Signing key later, ADD its SHA-256 to
+# "sha256_cert_fingerprints" in assetlinks.json (keep the existing one).
+<IfModule mod_rewrite.c>
+RewriteEngine Off
+</IfModule>
+DirectorySlash Off
+Options -Indexes
+<Files "assetlinks.json">
+  ForceType application/json
+</Files>
+<Files "apple-app-site-association">
+  ForceType application/json
+</Files>
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=300"
+  Header set Access-Control-Allow-Origin "*"
+</IfModule>

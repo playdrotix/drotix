@@ -7,12 +7,20 @@ ErrorDocument 403 /404.html
 <IfModule mod_rewrite.c>
 RewriteEngine On
 # Turn this on after your SSL certificate is active (remove the # signs):
+# RewriteCond %{REQUEST_URI} !^/\.well-known/
 # RewriteCond %{HTTPS} !=on
 # RewriteCond %{HTTP:X-Forwarded-Proto} !https
 # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Private folders must never be opened from the browser
 RewriteRule ^(includes|database)(/|$) - [F,L]
+
+# App Links files: never rewrite or redirect (see .well-known/.htaccess)
+RewriteRule ^\.well-known/ - [L]
+
+# Private-room invite links: /join, /join/<CODE>, /join?code=<CODE> -> join/index.php (always 200)
+RewriteCond %{REQUEST_URI} !^/join/index\.php$
+RewriteRule ^join(/.*)?$ join/index.php [L,QSA]
 </IfModule>
 
 <FilesMatch "^\.(?!well-known)">

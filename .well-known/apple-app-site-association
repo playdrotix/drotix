@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TODO_TEAM_ID.com.drodify.drotix",
+        "appIDs": ["TODO_TEAM_ID.com.drodify.drotix"],
+        "paths": ["/join/*"],
+        "components": [{ "/": "/join/*" }]
+      }
+    ]
+  }
+}
