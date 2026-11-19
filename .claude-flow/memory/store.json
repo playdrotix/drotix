@@ -62,6 +62,24 @@
       "lastAccessed": "2026-11-19T07:18:32.732Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T07:18:32.732Z"
+    },
+    "cmd-1795073716152": {
+      "key": "cmd-1795073716152",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && bash -n deploy/setup-applinks.sh && echo syntax ok; grep -c $'\\\\r' deploy/setup-applinks.sh; git config core.autocrlf\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:35:16.152Z",
+      "lastAccessed": "2026-11-19T07:35:16.152Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:35:16.152Z"
+    },
+    "cmd-1795074342450": {
+      "key": "cmd-1795074342450",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && git add deploy/setup-applinks.sh && git commit -q -m \\\"Add nginx App Links setup script\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T07:45:42.450Z",
+      "lastAccessed": "2026-11-19T07:45:42.450Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T07:45:42.450Z"
     }
   },
   "version": "3.0.0"
