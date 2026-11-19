@@ -4,7 +4,7 @@
  *
  * - ONE login only: whoever is logged in to /admin/ can see and manage everything here. No Supabase sign-in.
  * - Uses the Supabase SERVICE (secret) key, server side only (PHP). It never reaches the browser.
- *   Key + URL come from includes/app_config.php (falls back to supabase_url / supabase_key in includes/config.php).
+ *   URL + key come from the single config file includes/config.php (supabase_url, supabase_key).
  * - Tables and columns are discovered automatically from the database (PostgREST OpenAPI), so the panel
  *   follows the real schema without hard-coding it.
  * - Every change is written to the website audit log (action names start with "app_").
@@ -15,28 +15,17 @@ const APP_SCHEMA = 'drotix';
 const APP_EVIDENCE_BUCKET = 'drotix-report-evidence';
 $GLOBALS['__app_schema'] = null;
 
-/* ================= config ================= */
-function app_conf() {
-    static $c = null;
-    if ($c === null) {
-        $f = __DIR__ . '/app_config.php';
-        $c = is_file($f) ? require $f : array();
-        if (!is_array($c)) { $c = array(); }
-    }
-    return $c;
-}
+/* ================= config =================
+ * Everything comes from the ONE config file: includes/config.php  (supabase_url + supabase_key = secret key). */
 /** array(url, service_key) */
 function app_base() {
-    $c = app_conf();
-    $url = !empty($c['supabase_url']) ? $c['supabase_url'] : cfg('supabase_url', '');
-    $key = (!empty($c['service_key']) && strpos($c['service_key'], 'PASTE_') !== 0) ? $c['service_key'] : cfg('supabase_key', '');
-    return array(rtrim((string) $url, '/'), (string) $key);
+    return array(rtrim((string) cfg('supabase_url', ''), '/'), (string) cfg('supabase_key', ''));
 }
 function app_config_problem() {
     list($u, $k) = app_base();
-    if ($u === '' || $k === '') { return 'Supabase URL / service key missing. Fill includes/app_config.php (or supabase_url / supabase_key in includes/config.php).'; }
+    if ($u === '' || $k === '') { return 'Supabase URL / key missing. Fill supabase_url and supabase_key in includes/config.php.'; }
     $kind = sb_key_kind($k);
-    if (!in_array($kind[0], array('secret', 'service_role'), true)) { return 'The key must be the SECRET / service_role key (Supabase -> Project Settings -> API Keys -> Secret key, starts with sb_secret_). Now: ' . $kind[2]; }
+    if (!in_array($kind[0], array('secret', 'service_role'), true)) { return 'supabase_key in includes/config.php must be the SECRET / service_role key (Supabase -> Project Settings -> API Keys -> Secret key, starts with sb_secret_). Now: ' . $kind[2]; }
     return '';
 }
 

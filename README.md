@@ -141,6 +141,6 @@ automatically, so new app tables appear by themselves.
 - All data: every drotix table: filter, sort, edit, add, delete rows, CSV export.
 - Stats and an audit log of every change made here.
 
-Setup (once, on the server): copy `includes/app_config.sample.php` to `includes/app_config.php`
-and paste the Supabase **Secret key** (sb_secret_...) as `service_key`. `app_config.php` is in .gitignore.
-The `drotix` schema must be listed in Supabase -> Project Settings -> Data API -> Exposed schemas.
+Setup: nothing extra. It uses `supabase_url` and `supabase_key` (the Secret key, sb_secret_...) from
+`includes/config.php`, the same single config file as the website. The `drotix` schema must be listed in
+Supabase -> Project Settings -> Data API -> Exposed schemas.

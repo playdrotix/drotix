@@ -323,6 +323,24 @@
       "lastAccessed": "2026-11-19T10:56:32.518Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T10:56:32.518Z"
+    },
+    "cmd-1795086534491": {
+      "key": "cmd-1795086534491",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T11:08:54.491Z",
+      "lastAccessed": "2026-11-19T11:08:54.491Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T11:08:54.491Z"
+    },
+    "cmd-1795086546949": {
+      "key": "cmd-1795086546949",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T11:09:06.949Z",
+      "lastAccessed": "2026-11-19T11:09:06.949Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T11:09:06.949Z"
     }
   },
   "version": "3.0.0"
