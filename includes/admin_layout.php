@@ -86,6 +86,7 @@ function admin_head($title, $active) {
         'app' => array('/admin/app/users/', 'Mobile App'),
         'exp' => array('/admin/explorer/', 'Data Explorer'),
         'chk' => array('/admin/health/', 'Setup check'),
+        'me' => array('/admin/profile/', 'My profile'),
     );
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
     echo '<meta name="robots" content="noindex,nofollow"><title>' . e($title) . ' - Drotix Admin</title>';
