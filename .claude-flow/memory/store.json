@@ -116,6 +116,132 @@
       "lastAccessed": "2026-11-19T07:51:32.470Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T07:51:32.470Z"
+    },
+    "cmd-1795082851554": {
+      "key": "cmd-1795082851554",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && find admin includes api -type f | head -60 && wc -l admin/*.php admin/*/*.php includes/*.php 2>/dev/null | tail -40\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:07:31.554Z",
+      "lastAccessed": "2026-11-19T10:07:31.554Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:07:31.554Z"
+    },
+    "cmd-1795082859584": {
+      "key": "cmd-1795082859584",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cat includes/admin_layout.php includes/bootstrap.php admin/index.php admin/login/index.php admin/.htaccess && sed 's/=>.*\\\\(key\\\\|secret\\\\|pass\\\\).*/=> [REDACTED]/I' includes/config.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:07:39.584Z",
+      "lastAccessed": "2026-11-19T10:07:39.584Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:07:39.584Z"
+    },
+    "cmd-1795082860738": {
+      "key": "cmd-1795082860738",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cat admin/tournament/index.php admin/messages/index.php && cat admin/assets/admin.js && wc -c admin/assets/admin.css && head -c 3500 admin/assets/admin.css\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:07:40.738Z",
+      "lastAccessed": "2026-11-19T10:07:40.738Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:07:40.738Z"
+    },
+    "cmd-1795082883355": {
+      "key": "cmd-1795082883355",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cat includes/supabase.php && sed -n '/^\\\\.flash/,$p' admin/assets/admin.css | head -c 2000; ls includes; cat admin/health/index.php | head -30\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:08:03.355Z",
+      "lastAccessed": "2026-11-19T10:08:03.355Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:08:03.355Z"
+    },
+    "cmd-1795082976870": {
+      "key": "cmd-1795082976870",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && ls -la includes/ && touch includes/_t && rm includes/_t && echo writable\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:09:36.870Z",
+      "lastAccessed": "2026-11-19T10:09:36.870Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:09:36.870Z"
+    },
+    "cmd-1795083036530": {
+      "key": "cmd-1795083036530",
+      "value": "{\"command\":\"echo \\\"$TEMP\\\"; ls \\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/\\\" 2>&1 | head\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:10:36.530Z",
+      "lastAccessed": "2026-11-19T10:10:36.530Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:10:36.530Z"
+    },
+    "cmd-1795083050202": {
+      "key": "cmd-1795083050202",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; rm -f \\\"$S/probe.txt\\\"; mkdir -p \\\"$S/stage/includes\\\" \\\"$S/stage/admin/assets\\\" \\\"$S/stage/admin/app\\\"/{login,users,reports,appeals,tournaments,broadcast,audit,evidence}; echo ok\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:10:50.202Z",
+      "lastAccessed": "2026-11-19T10:10:50.202Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:10:50.202Z"
+    },
+    "cmd-1795083290379": {
+      "key": "cmd-1795083290379",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad/stage\\\"; sed -i 's|<form method=\\\"post\\\" class=\\\"row\\\" style=\\\"margin:0;gap:6px\\\">|<form method=\\\"post\\\" class=\\\"row\\\" style=\\\"margin:0;gap:6px\\\" data-confirm=\\\"Apply this decision to the appeal? Approving lifts the suspension.\\\">|; s| data-msg=\\\"approve\\\"||' \\\"$S/admin/app/appeals/index.php\\\" && grep -c 'data-confirm' \\\"$S/admin/app/appeals/index.php\\\"\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:14:50.379Z",
+      "lastAccessed": "2026-11-19T10:14:50.379Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:14:50.379Z"
+    },
+    "cmd-1795083340223": {
+      "key": "cmd-1795083340223",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad/stage\\\"; R=\\\"/c/Users/chandra kumari/Documents/Github/drotix\\\"\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:15:40.223Z",
+      "lastAccessed": "2026-11-19T10:15:40.223Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:15:40.223Z"
+    },
+    "cmd-1795083346018": {
+      "key": "cmd-1795083346018",
+      "value": "{\"command\":\"which php docker wsl 2>/dev/null; ls /c/xampp/php/php.exe /c/laragon/bin/php/*/php.exe 2>/dev/null; ls \\\"$LOCALAPPDATA/Microsoft/WinGet/Packages\\\" 2>/dev/null | grep -i php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:15:46.018Z",
+      "lastAccessed": "2026-11-19T10:15:46.018Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:15:46.018Z"
+    },
+    "cmd-1795083349371": {
+      "key": "cmd-1795083349371",
+      "value": "{\"command\":\"wsl -l -q 2>&1 | tr -d '\\\\0' | head; wsl -e sh -c \\\"which php\\\" 2>&1 | tr -d '\\\\0' | head -3\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:15:49.371Z",
+      "lastAccessed": "2026-11-19T10:15:49.371Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:15:49.371Z"
+    },
+    "cmd-1795083374876": {
+      "key": "cmd-1795083374876",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && grep -rhoE \\\"^function [a-z_]+\\\" includes admin api | sort | uniq -d; grep -rn \\\"function g(\\\\|function gx(\\\" --include=*.php . | grep -v app_admin_api; grep -n \\\"'app'\\\" includes/admin_layout.php; for f in $(find admin/app includes/app_admin_api.php -name '*.php'); do python - \\\"$f\\\" <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:16:14.876Z",
+      "lastAccessed": "2026-11-19T10:16:14.876Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:16:14.876Z"
+    },
+    "cmd-1795083391115": {
+      "key": "cmd-1795083391115",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad/phpcheck.py\\\" includes/app_admin_api.php includes/admin_layout.php $(find admin/app -name '*.php')\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:16:31.115Z",
+      "lastAccessed": "2026-11-19T10:16:31.115Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:16:31.115Z"
+    },
+    "cmd-1795083405515": {
+      "key": "cmd-1795083405515",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && cat >> README.md <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T10:16:45.515Z",
+      "lastAccessed": "2026-11-19T10:16:45.515Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T10:16:45.515Z"
     }
   },
   "version": "3.0.0"

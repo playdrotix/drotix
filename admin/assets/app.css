@@ -1,0 +1,35 @@
+/* DROTIX App admin section (extends admin.css) */
+.apptop{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:-8px 0 22px}
+.subnav{display:flex;flex-wrap:wrap;gap:6px}
+.subnav a{color:var(--m);text-decoration:none;padding:7px 14px;border-radius:99px;font-weight:600;font-size:13px;border:1px solid var(--b)}
+.subnav a:hover{color:var(--t);background:var(--s2)}.subnav a.on{color:var(--t);border-color:var(--tl);background:rgba(47,184,180,.12)}
+.appme{display:flex;gap:10px;align-items:center;font-size:13px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--b);margin:20px 0 18px}
+.tabs a{color:var(--m);text-decoration:none;padding:10px 14px;font-weight:600;font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a:hover{color:var(--t)}.tabs a.on{color:var(--t);border-bottom-color:var(--mg)}
+.av{border-radius:50%;object-fit:cover;background:var(--s2);border:1px solid var(--b2);vertical-align:middle;flex:none}
+.av-ph{display:inline-grid;place-items:center;color:var(--tl);font-weight:800;letter-spacing:.5px}
+.ucell{display:flex;gap:10px;align-items:center}
+tr.click{cursor:pointer}
+.uhead{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.uhead .who h2{margin:0 0 6px;font-size:24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.uhead .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 22px;font-size:14px;flex:1;min-width:260px}
+.uhead .meta div span{color:var(--m)}
+.pno{color:var(--tl);font-weight:800}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+details.act{position:relative}
+details.act>summary{list-style:none;cursor:pointer}details.act>summary::-webkit-details-marker{display:none}
+details.act[open]>summary{filter:brightness(1.2)}
+details.act .pop{position:absolute;z-index:20;top:calc(100% + 6px);left:0;width:min(360px,86vw);background:var(--s);border:1px solid var(--mg);border-radius:14px;padding:16px;display:grid;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.pop label,.fgrid label{display:grid;gap:5px;font-size:13px;color:var(--m);font-weight:600}
+.pop input,.pop select,.pop textarea,.fgrid input,.fgrid select{width:100%}
+.pop textarea{min-height:70px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px}
+.cards.sm .card .n{font-size:26px}.card .s{color:var(--m);font-size:12px;margin-top:4px}
+.card .n.teal{color:var(--tl)}.card .n.gold{color:var(--gd)}
+.pos{color:var(--tl);font-weight:700}.neg{color:var(--rd);font-weight:700}
+code.j{font-size:12px;color:var(--m);word-break:break-all}
+.warn{border:1px solid var(--gd);background:rgba(255,194,77,.08);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+button[disabled],.btn[disabled]{opacity:.55;cursor:wait}
+.nowrap{white-space:nowrap}
+.chat{white-space:pre-wrap;max-width:520px}
