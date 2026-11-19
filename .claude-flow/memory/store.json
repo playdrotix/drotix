@@ -503,6 +503,42 @@
       "lastAccessed": "2026-11-19T16:00:45.127Z",
       "accessCount": 0,
       "expiresAt": "2026-12-19T16:00:45.127Z"
+    },
+    "cmd-1795105127733": {
+      "key": "cmd-1795105127733",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && grep -n \\\"function app_admin_token\\\" -A40 includes/app_admin_api.php | head -60; grep -n \\\"function app_headers\\\" -A6 includes/app_admin_api.php; grep -n \\\"function app_rpc_error\\\" -A8 includes/app_admin_api.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:18:47.733Z",
+      "lastAccessed": "2026-11-19T16:18:47.733Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:18:47.733Z"
+    },
+    "cmd-1795105181391": {
+      "key": "cmd-1795105181391",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"$S/patch_api8.py\\\" includes/app_admin_api.php && mkdir -p admin/app/check && cp \\\"$S/stage8/check/index.php\\\" admin/app/check/ && grep -rn \\\"No app admin session\\\" admin includes; python \\\"$S/phpcheck.py\\\" includes/app_admin_api.php admin/app/check/index.php; git status --short | grep -v -e claude-flow -e swarm\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:19:41.391Z",
+      "lastAccessed": "2026-11-19T16:19:41.391Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:19:41.391Z"
+    },
+    "cmd-1795105263657": {
+      "key": "cmd-1795105263657",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && grep -n \\\"^function app_list_legal\\\\|^function app_publish_legal\\\\|^function app_list_app_releases\\\\|^function app_publish_app_release\\\\|^function app_online\\\\|^function app_get_legal_documents\\\" includes/app_admin_api.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:21:03.657Z",
+      "lastAccessed": "2026-11-19T16:21:03.657Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:21:03.657Z"
+    },
+    "cmd-1795105333703": {
+      "key": "cmd-1795105333703",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"$S/patch_api9.py\\\" includes/app_admin_api.php && cp \\\"$S/stage9/online/index.php\\\" admin/app/online/index.php && sed -i \\\"s/'online' => 'Shows every player who is online right now.'/'online' => 'Every player of the app: who is online right now (live) and who is offline.'/; s/'legal' => 'One Privacy Policy and one Terms of Service for the whole app, shown to every player.'/'legal' => 'One Privacy Policy and one Terms of Service for the whole app: a new version is shown to every player in the app.'/; s/'rel' => 'One app update for everyone: every player on an older version sees the update screen.'/'rel' => 'One update for the whole app: every player on an older version sees the update screen.'/\\\" includes/app_admin_api.php && grep -c \\\"a new version is shown to every player\\\" includes/app_admin_api.php && python \\\"$S/phpcheck.py\\\" includes/app_admin_api.php admin/app/online/index.php && grep -n \\\"^function app_online\\\\|^function app_legal_table\\\\|^function app_release_table\\\\|^function app_presence_source\\\" includes/app_admin_api.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-19T16:22:13.703Z",
+      "lastAccessed": "2026-11-19T16:22:13.703Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-19T16:22:13.703Z"
     }
   },
   "version": "3.0.0"

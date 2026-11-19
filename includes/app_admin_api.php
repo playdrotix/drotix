@@ -32,7 +32,7 @@ function app_config_problem() {
 /* ================= HTTP ================= */
 function app_headers($extra = array(), $hasBody = false) {
     list(, $key) = app_base();
-    $h = array('apikey: ' . $key, 'Accept: application/json');
+    $h = isset($extra['apikey']) ? array('Accept: application/json') : array('apikey: ' . $key, 'Accept: application/json');
     if (strpos($key, 'eyJ') === 0 && !isset($extra['Authorization'])) { $h[] = 'Authorization: Bearer ' . $key; }
     if ($hasBody) { $h[] = 'Content-Type: application/json'; }
     foreach ($extra as $k => $v) { $h[] = $k . ': ' . $v; }
@@ -118,35 +118,53 @@ function app_count($table, $query = array()) {
  * The game's own admin_* functions check that the caller is an app admin, so they need this token.
  * Optional: 'app_admin_email' in includes/config.php picks which admin account is used.
  */
-function app_admin_token() {
+function app_admin_token($force = false) {
     $c = isset($_SESSION['app_admin_tok']) ? $_SESSION['app_admin_tok'] : null;
-    if ($c && $c['exp'] - 120 > time()) { return $c['token']; }
-    if ($c && isset($c['fail']) && $c['fail'] > time() - 120) { return null; }   // do not retry every request
+    if (!$force && $c && $c['exp'] - 120 > time()) { return $c['token']; }
+    if (!$force && $c && isset($c['fail']) && $c['fail'] > time() - 60) { return null; }   // do not retry on every request
+    $steps = array(); $tok = null;
     $email = (string) cfg('app_admin_email', '');
-    if ($email === '') {
-        $pt = app_profiles_table(); $pc = app_cols($pt);
-        if (isset($pc['is_admin'])) {
-            list($rows, , ) = app_select($pt, array('is_admin' => 'eq.true', 'select' => app_profile_idcol()), 5, 0, false);
-            foreach ($rows as $r) { $u = app_auth_get($r[app_profile_idcol()]); if ($u['ok'] && g($u['data'], 'email')) { $email = $u['data']['email']; break; } }
-        }
-    }
-    $tok = null;
-    if ($email !== '') {
-        $l = app_http('POST', '/auth/v1/admin/generate_link', array('type' => 'magiclink', 'email' => $email));
-        $hash = gx($l['data'], array('hashed_token', 'properties.hashed_token'));
-        if ($l['ok'] && $hash) {
-            foreach (array('magiclink', 'email') as $ty) {
-                $v = app_http('POST', '/auth/v1/verify', array('type' => $ty, 'token_hash' => $hash));
-                if ($v['ok'] && !empty($v['data']['access_token'])) {
-                    $tok = $v['data']['access_token'];
-                    $_SESSION['app_admin_tok'] = array('token' => $tok, 'exp' => time() + (int) g($v['data'], 'expires_in', 3600), 'email' => $email);
-                    break;
+    if ($email !== '') { $steps[] = array(true, 'Using app_admin_email from config.php: ' . $email); }
+    else {
+        $pt = app_profiles_table(); $pc = app_cols($pt); $idc = app_profile_idcol();
+        if (!isset($pc['is_admin'])) { $steps[] = array(false, 'The profiles table has no is_admin column.'); }
+        else {
+            list($rows, , $rr) = app_select($pt, array('is_admin' => 'eq.true', 'select' => $idc), 10, 0, false);
+            if (!$rr['ok']) { $steps[] = array(false, 'Could not read profiles: ' . $rr['error']); }
+            elseif (!$rows) { $steps[] = array(false, 'No player has is_admin = true yet.'); }
+            else {
+                $steps[] = array(true, count($rows) . ' app admin profile(s) found.');
+                foreach ($rows as $r) {
+                    $u = app_auth_get($r[$idc]);
+                    if ($u['ok'] && g($u['data'], 'email')) { $email = $u['data']['email']; break; }
+                    $steps[] = array(false, 'Admin ' . substr($r[$idc], 0, 8) . ' has no login email' . ($u['ok'] ? '' : ' (' . $u['error'] . ')') . '.');
                 }
+                if ($email !== '') { $steps[] = array(true, 'Acting as ' . $email); }
             }
         }
     }
-    if ($tok === null) { $_SESSION['app_admin_tok'] = array('fail' => time(), 'exp' => 0, 'token' => null, 'email' => $email); }
+    if ($email !== '') {
+        $l = app_http('POST', '/auth/v1/admin/generate_link', array('type' => 'magiclink', 'email' => $email));
+        $hash = gx($l['data'], array('hashed_token', 'properties.hashed_token'));
+        if (!$l['ok'] || !$hash) { $steps[] = array(false, 'Could not create a session link: ' . ($l['error'] !== '' ? $l['error'] : 'no token returned')); }
+        else {
+            $last = '';
+            foreach (array('magiclink', 'email') as $ty) {
+                $v = app_http('POST', '/auth/v1/verify', array('type' => $ty, 'token_hash' => $hash));
+                if ($v['ok'] && !empty($v['data']['access_token'])) { $tok = $v['data']['access_token']; $exp = time() + (int) g($v['data'], 'expires_in', 3600); break; }
+                $last = $v['error'];
+            }
+            $steps[] = $tok ? array(true, 'Admin session created.') : array(false, 'Could not open the admin session: ' . $last);
+        }
+    }
+    $_SESSION['app_admin_steps'] = $steps;
+    $_SESSION['app_admin_tok'] = $tok ? array('token' => $tok, 'exp' => $exp, 'email' => $email) : array('fail' => time(), 'exp' => 0, 'token' => null, 'email' => $email);
     return $tok;
+}
+/** Short reason why there is no admin session ('' when fine). */
+function app_admin_why() {
+    foreach (array_reverse(isset($_SESSION['app_admin_steps']) ? $_SESSION['app_admin_steps'] : array()) as $st) { if (!$st[0]) { return $st[1]; } }
+    return '';
 }
 function app_admin_email() { return isset($_SESSION['app_admin_tok']['email']) ? (string) $_SESSION['app_admin_tok']['email'] : ''; }
 
@@ -155,7 +173,11 @@ function app_rpc($fn, $params = array()) {
     if (!app_valid_ident($fn)) { return array('ok' => false, 'data' => null, 'error' => 'Invalid function'); }
     $h = array('Content-Profile' => APP_SCHEMA, 'Accept-Profile' => APP_SCHEMA);
     $tok = strpos($fn, 'admin_') === 0 ? app_admin_token() : null;
-    if ($tok) { $h['Authorization'] = 'Bearer ' . $tok; }
+    if ($tok) {
+        $h['Authorization'] = 'Bearer ' . $tok;
+        $pub = (string) cfg('supabase_anon_key', '');
+        if ($pub !== '') { $h['apikey'] = $pub; }   // optional: publishable key for calls made as the admin user
+    }
     $r = app_http('POST', '/rest/v1/rpc/' . $fn, (object) $params, $h);
     if (!$r['ok'] && $tok && $r['status'] === 401) { unset($_SESSION['app_admin_tok']); }
     if ($r['ok'] && is_array($r['data']) && isset($r['data']['status']) && $r['data']['status'] === 'error') {
@@ -255,22 +277,97 @@ function app_auth_search_email($needle, $max = 50) {
 /** {status, privacy: Doc|null, terms: Doc|null}  Doc = {id, doc_type, version, title, sections:[{heading, body}], contact_website, contact_email, summary, requires_acceptance, published_at} */
 function app_get_legal_documents() { return app_rpc('get_legal_documents'); }
 /** {status, versions: [Doc + accepted_count], players_total} */
-function app_list_legal() { return app_rpc('admin_list_legal'); }
+function app_list_legal() {
+    $r = app_rpc('admin_list_legal');
+    if ($r['ok']) { $r['via'] = 'game'; return $r; }
+    $t = app_legal_table();
+    if (!$t) { return $r; }
+    $q = array('order' => 'version.desc');
+    list($rows, , $x) = app_select($t, $q, 500, 0, false);
+    if (!$x['ok']) { return $r; }
+    $acc = app_legal_accept_table();
+    foreach ($rows as &$v) {
+        $v['accepted_count'] = null;
+        if ($acc && isset($v['id'])) { $v['accepted_count'] = app_count($acc['table'], array($acc['doc'] => 'eq.' . $v['id'])); }
+        if (isset($v['sections']) && is_string($v['sections'])) { $d = json_decode($v['sections'], true); if (is_array($d)) { $v['sections'] = $d; } }
+    }
+    unset($v);
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'versions' => $rows, 'players_total' => (int) app_count(app_profiles_table())));
+}
+/** The game's legal documents table (doc_type + version). */
+function app_legal_table() {
+    foreach (app_tables() as $t => $i) { if (isset($i['cols']['doc_type'], $i['cols']['version']) && !preg_match('/accept|consent/', $t)) { return $t; } }
+    return null;
+}
+/** Acceptance table: array(table, doc column) or null. */
+function app_legal_accept_table() {
+    foreach (app_tables() as $t => $i) {
+        if (!preg_match('/(accept|consent|agree)/', $t)) { continue; }
+        foreach (array('document_id', 'legal_document_id', 'doc_id', 'legal_id', 'version_id') as $c) { if (isset($i['cols'][$c])) { return array('table' => $t, 'doc' => $c); } }
+    }
+    return null;
+}
 /** -> {status, id, version}. $sections = array(array('heading' => ..., 'body' => ...), ...) */
 function app_publish_legal($type, $title, $sections, $website, $email, $summary, $requiresAcceptance) {
-    return app_rpc('admin_publish_legal', array('p_doc_type' => $type, 'p_title' => $title, 'p_sections' => $sections,
+    $r = app_rpc('admin_publish_legal', array('p_doc_type' => $type, 'p_title' => $title, 'p_sections' => $sections,
         'p_contact_website' => $website !== '' ? $website : null, 'p_contact_email' => $email !== '' ? $email : null,
         'p_summary' => $summary !== '' ? $summary : null, 'p_requires_acceptance' => (bool) $requiresAcceptance));
+    if ($r['ok']) { return $r; }
+    // fallback: write version N+1 straight into the game's table; the app shows the newest version to every player
+    $t = app_legal_table();
+    if (!$t) { return $r; }
+    list($last, , ) = app_select($t, array('doc_type' => 'eq.' . $type, 'order' => 'version.desc', 'select' => 'version'), 1, 0, false);
+    $ver = $last ? ((int) $last[0]['version']) + 1 : 1;
+    $c = app_cols($t);
+    $row = array('doc_type' => $type, 'version' => $ver);
+    foreach (array('title' => $title, 'sections' => $sections, 'contact_website' => $website !== '' ? $website : null, 'contact_email' => $email !== '' ? $email : null,
+                   'summary' => $summary !== '' ? $summary : null, 'requires_acceptance' => (bool) $requiresAcceptance, 'published_at' => date('c'), 'is_published' => true, 'active' => true) as $k => $v) {
+        if (isset($c[$k])) { $row[$k] = $v; }
+    }
+    $row = app_fill_required($t, $row);
+    $x = app_db('POST', $t, array(), $row, 'return=representation');
+    if (!$x['ok']) { $x['error'] = 'Publish failed: ' . $x['error'] . ' (game function: ' . $r['error'] . ')'; return $x; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'id' => g($x['data'], '0.id'), 'version' => $ver));
 }
 /** {status, items: [{id, platform, version_name, version_code, min_supported_version_code, update_available, apk_url, apk_sha256, apk_size_bytes, ios_app_store_url, release_notes[], published_at}]} */
-function app_list_app_releases($limit = 30) { return app_rpc('admin_list_app_releases', array('p_limit' => (int) $limit)); }
+function app_list_app_releases($limit = 30) {
+    $r = app_rpc('admin_list_app_releases', array('p_limit' => (int) $limit));
+    if ($r['ok']) { $r['via'] = 'game'; return $r; }
+    $t = app_release_table();
+    if (!$t) { return $r; }
+    $c = app_cols($t);
+    $q = array('order' => (isset($c['published_at']) ? 'published_at' : (isset($c['created_at']) ? 'created_at' : 'version_code')) . '.desc');
+    list($rows, , $x) = app_select($t, $q, (int) $limit, 0, false);
+    if (!$x['ok']) { return $r; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'items' => $rows));
+}
+/** The game's app releases table (version_code + apk / min supported). */
+function app_release_table() {
+    foreach (app_tables() as $t => $i) { if (isset($i['cols']['version_code']) && (isset($i['cols']['apk_url']) || isset($i['cols']['min_supported_version_code']))) { return $t; } }
+    return null;
+}
 /** -> {status, id} | {status:'error', message} */
 function app_publish_app_release($a) {
-    return app_rpc('admin_publish_app_release', array(
+    $r = app_rpc('admin_publish_app_release', array(
         'p_version_name' => $a['version_name'], 'p_version_code' => (int) $a['version_code'], 'p_min_supported_version_code' => (int) $a['min_supported'],
         'p_apk_url' => $a['apk_url'] !== '' ? $a['apk_url'] : null, 'p_apk_sha256' => $a['apk_sha256'] !== '' ? $a['apk_sha256'] : null,
         'p_apk_size_bytes' => $a['apk_size'] !== '' ? (int) $a['apk_size'] : null, 'p_release_notes' => $a['notes'],
         'p_platform' => $a['platform'], 'p_ios_app_store_url' => $a['ios_url'] !== '' ? $a['ios_url'] : null, 'p_update_available' => (bool) $a['update_available']));
+    if ($r['ok']) { return $r; }
+    // fallback: insert the release row directly; the app checks the newest row for every player
+    $t = app_release_table();
+    if (!$t) { return $r; }
+    $c = app_cols($t); $row = array();
+    foreach (array('platform' => $a['platform'], 'version_name' => $a['version_name'], 'version_code' => (int) $a['version_code'], 'min_supported_version_code' => (int) $a['min_supported'],
+                   'apk_url' => $a['apk_url'] !== '' ? $a['apk_url'] : null, 'apk_sha256' => $a['apk_sha256'] !== '' ? $a['apk_sha256'] : null,
+                   'apk_size_bytes' => $a['apk_size'] !== '' ? (int) $a['apk_size'] : null, 'release_notes' => $a['notes'],
+                   'ios_app_store_url' => $a['ios_url'] !== '' ? $a['ios_url'] : null, 'update_available' => (bool) $a['update_available'], 'published_at' => date('c')) as $k => $v) {
+        if (isset($c[$k])) { $row[$k] = $v; }
+    }
+    $row = app_fill_required($t, $row);
+    $x = app_db('POST', $t, array(), $row, 'return=representation');
+    if (!$x['ok']) { $x['error'] = 'Publish failed: ' . $x['error'] . ' (game function: ' . $r['error'] . ')'; return $x; }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'id' => g($x['data'], '0.id')));
 }
 /* ---------- coupons ----------
  * Coupon = {code, coins, max_uses|null, used_count, starts_at|null, expires_at|null, active, note|null, created_at, updated_at,
@@ -543,9 +640,62 @@ function app_online($limit = 500) {
     static $c = array();
     if (isset($c[$limit])) { return $c[$limit]; }
     $r = app_rpc('admin_online_now', array('p_limit' => (int) $limit));
-    $items = $r['ok'] ? (array) g($r['data'], 'items', array()) : array();
+    if ($r['ok']) {
+        $items = (array) g($r['data'], 'items', array());
+        $count = g($r['data'], 'online_count', count($items));
+    } else {
+        $d = app_online_direct($limit);
+        if ($d === null) { return $c[$limit] = array('ok' => false, 'count' => null, 'items' => array(), 'ids' => array(), 'error' => $r['error']); }
+        list($items, $count) = $d;
+    }
     $ids = array(); foreach ($items as $i) { if (!empty($i['user_id'])) { $ids[$i['user_id']] = $i; } }
-    return $c[$limit] = array('ok' => $r['ok'], 'count' => $r['ok'] ? g($r['data'], 'online_count', count($items)) : null, 'items' => $items, 'ids' => $ids, 'error' => $r['error']);
+    return $c[$limit] = array('ok' => true, 'count' => $count, 'items' => $items, 'ids' => $ids, 'error' => '');
+}
+/** Presence source: array(table, user col, last-seen col, in-match col|null) or null. */
+function app_presence_source() {
+    $best = null;
+    foreach (app_tables() as $t => $i) {
+        $seen = null; foreach (array('last_seen_at', 'last_heartbeat_at', 'heartbeat_at', 'seen_at', 'last_active_at') as $s) { if (isset($i['cols'][$s])) { $seen = $s; break; } }
+        if (!$seen) { continue; }
+        $u = $t === app_profiles_table() ? app_profile_idcol() : app_owner_col($t);
+        if (!$u) { continue; }
+        $im = null; foreach (array('in_match', 'is_in_match', 'playing') as $m) { if (isset($i['cols'][$m])) { $im = $m; break; } }
+        $cand = array('table' => $t, 'user' => $u, 'seen' => $seen, 'in_match' => $im);
+        if (preg_match('/(presence|heartbeat|online)/', $t)) { return $cand; }
+        if (!$best) { $best = $cand; }
+    }
+    return $best;
+}
+/** Online players read directly (seen in the last 90 s). array(items, count) or null. */
+function app_online_direct($limit) {
+    $src = app_presence_source();
+    if (!$src) { return null; }
+    $since = date('c', time() - 90);
+    list($rows, $total, $r) = app_select($src['table'], array($src['seen'] => 'gte.' . $since, 'order' => $src['seen'] . '.desc'), (int) $limit, 0, true);
+    if (!$r['ok']) { return null; }
+    $ids = array(); foreach ($rows as $x) { $ids[] = $x[$src['user']]; }
+    $prof = array();
+    if ($ids) {
+        $pt = app_profiles_table(); $idc = app_profile_idcol();
+        list($ps, , ) = app_select($pt, array($idc => 'in.(' . implode(',', $ids) . ')'), count($ids) + 5, 0, false);
+        foreach ($ps as $p) { $prof[$p[$idc]] = $p; }
+    }
+    $items = array();
+    foreach ($rows as $x) {
+        $u = $x[$src['user']]; $p = isset($prof[$u]) ? $prof[$u] : array();
+        $items[] = array('user_id' => $u, 'username' => g($p, 'username'), 'player_no' => g($p, 'player_no'), 'avatar_url' => g($p, 'avatar_url'),
+                         'status_text' => g($p, 'status_text'), 'in_match' => $src['in_match'] ? (bool) g($x, $src['in_match']) : false, 'last_seen_at' => $x[$src['seen']]);
+    }
+    return array($items, $total !== null ? $total : count($items));
+}
+/** Last-seen time for many players: array(user_id => iso). */
+function app_last_seen($ids) {
+    $src = app_presence_source(); $out = array();
+    $ids = array_values(array_filter($ids, 'uuid_ok'));
+    if (!$src || !$ids) { return $out; }
+    list($rows, , ) = app_select($src['table'], array($src['user'] => 'in.(' . implode(',', $ids) . ')', 'select' => $src['user'] . ',' . $src['seen']), count($ids) + 5, 0, false);
+    foreach ($rows as $r) { $out[$r[$src['user']]] = $r[$src['seen']]; }
+    return $out;
 }
 /** Readable labels for audit actions (game audit + this panel). */
 function app_action_label($a) {
@@ -566,8 +716,9 @@ function app_action_label($a) {
 /** Error text for a failed game function, with the fix when no app admin exists. */
 function app_rpc_error($r) {
     $e = (string) $r['error'];
-    if (stripos($e, 'forbidden') !== false || (isset($r['status']) && $r['status'] === 401) || !app_admin_token()) {
-        $e .= ' (No app admin session: open Players, pick your own account and set is_admin = true.)';
+    if (stripos($e, 'forbidden') !== false || (isset($r['status']) && $r['status'] === 401)) {
+        $why = app_admin_token() ? 'the admin session was refused' : app_admin_why();
+        $e .= ' (' . ($why !== '' ? $why . ' ' : '') . 'Open Mobile App -> Admin check to fix it.)';
     }
     return $e;
 }
@@ -679,11 +830,11 @@ function app_head($title, $sub) {
             'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),
             'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'))),
         array('Data', 'Reports & raw data', array(
-            'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'), 'audit' => array('/admin/app/audit/', 'Audit log'))),
+            'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'), 'audit' => array('/admin/app/audit/', 'Audit log'), 'check' => array('/admin/app/check/', 'Admin check'))),
     );
-    $global = array('online' => 'Shows every player who is online right now.', 'cast' => 'Sent to every player of the app, not to one player.',
-                    'legal' => 'One Privacy Policy and one Terms of Service for the whole app, shown to every player.',
-                    'rel' => 'One app update for everyone: every player on an older version sees the update screen.',
+    $global = array('online' => 'Every player of the app: who is online right now (live) and who is offline.', 'cast' => 'Sent to every player of the app, not to one player.',
+                    'legal' => 'One Privacy Policy and one Terms of Service for the whole app: a new version is shown to every player in the app.',
+                    'rel' => 'One update for the whole app: every player on an older version sees the update screen.',
                     'tour' => 'Tournaments are open to all players.', 'coupons' => 'Any new player can use a coupon code once.');
     echo '<link rel="stylesheet" href="/admin/assets/app.css?v=5"><script src="/admin/assets/app.js?v=5" defer></script>';
     echo '<div class="apptop"><div class="navgroups">';
