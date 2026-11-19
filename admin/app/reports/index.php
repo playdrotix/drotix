@@ -26,7 +26,15 @@ function set_report($RT, $id, $kind, $notes, $S) {
     $patch = array('status' => $st); $c = app_cols($RT);
     if ($notes !== '' && isset($c['admin_notes'])) { $patch['admin_notes'] = $notes; }
     foreach (array('reviewed_at', 'resolved_at') as $k) { if (isset($c[$k])) { $patch[$k] = date('c'); } }
-    return app_db('PATCH', $RT, array(app_pk($RT) ?: 'id' => 'eq.' . $id), $patch, 'return=minimal');
+    $r = app_db('PATCH', $RT, array(app_pk($RT) ?: 'id' => 'eq.' . $id), $patch, 'return=minimal');
+    // the game's function notifies the reporter itself; when we wrote directly, notify here
+    global $cReporter;
+    if ($r['ok'] && $cReporter) {
+        list($rows, , ) = app_select($RT, array(app_pk($RT) ?: 'id' => 'eq.' . $id), 1, 0, false);
+        $rep = $rows ? g($rows[0], $cReporter) : null;
+        if ($rep) { app_notify($rep, 'Report ' . app_ref('R', $id) . ' updated', 'Your report is now: ' . str_replace('_', ' ', $st) . ($notes !== '' ? '. ' . $notes : '.')); }
+    }
+    return $r;
 }
 
 /* ---------- actions ---------- */
@@ -39,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $RT) {
     if ($rid === '') { flash_set('err', 'Bad report.'); redirect($back); }
     if (in_array($act, array('approve', 'reject', 'review'), true)) {
         $r = set_report($RT, $rid, $act, $notes, $S);
-        if ($r['ok']) { app_log('report_' . $act, $rid, $notes); flash_set('ok', array('approve' => 'Report approved (resolved).', 'reject' => 'Report rejected (dismissed).', 'review' => 'Report marked under review.')[$act]); }
+        if ($r['ok']) { app_log('report_' . $act, $rid, $notes); flash_set('ok', app_ref('R', $rid) . ': ' . array('approve' => 'approved (resolved).', 'reject' => 'rejected (dismissed).', 'review' => 'marked under review.')[$act] . ' The reporter is notified.'); }
         else { flash_set('err', 'Failed: ' . $r['error']); }
     } elseif ($act === 'suspend') {
         $uid = isset($_POST['user_id']) ? (string) $_POST['user_id'] : '';
@@ -51,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $RT) {
         if ($r['ok']) {
             app_log('report_suspend', $uid, array('report' => $rid, 'reason' => $reason));
             if (!empty($_POST['tell'])) { app_notify($uid, 'Account suspended', 'Your account was suspended: ' . $reason); }
-            flash_set('ok', 'Player suspended and the report was resolved.');
+            flash_set('ok', 'Player suspended; report ' . app_ref('R', $rid) . ' resolved (the reporter sees "Player suspended").');
         } else { flash_set('err', 'Suspend failed: ' . $r['error']); }
     }
     redirect($back);
@@ -65,11 +73,11 @@ $pk = app_pk($RT) ?: 'id';
 function report_actions($x, $pk, $cReported, $back) {
     $rid = (string) g($x, $pk, ''); $uid = $cReported ? (string) g($x, $cReported, '') : '';
     $h = csrf_field() . '<input type="hidden" name="report_id" value="' . e($rid) . '"><input type="hidden" name="back" value="' . e($back) . '">';
-    $o = '<div class="actions" style="margin:0">';
-    $o .= '<form method="post" data-confirm="Approve this report (valid) and mark it resolved?">' . $h . '<input type="hidden" name="action" value="approve"><button class="btn sm" type="submit">Approve</button></form>';
-    $o .= '<form method="post" data-confirm="Reject this report (not valid) and dismiss it?">' . $h . '<input type="hidden" name="action" value="reject"><button class="btn ghost sm" type="submit">Reject</button></form>';
+    $o = '<div class="actions" style="margin:0"><span class="muted hint">' . e(app_ref('R', $rid)) . ' &middot; the reporter is notified</span>';
+    $o .= '<form method="post" data-confirm="Approve report ' . e(app_ref('R', $rid)) . ' (valid) and mark it resolved? The reporter is notified.">' . $h . '<input type="hidden" name="action" value="approve"><button class="btn sm" type="submit">Approve</button></form>';
+    $o .= '<form method="post" data-confirm="Reject report ' . e(app_ref('R', $rid)) . ' (not valid) and dismiss it? The reporter is notified.">' . $h . '<input type="hidden" name="action" value="reject"><button class="btn ghost sm" type="submit">Reject</button></form>';
     if (uuid_ok($uid)) {
-        $o .= '<details class="act"><summary class="btn danger sm">Suspend</summary><form class="pop" method="post" data-confirm="Suspend the reported player and resolve this report?">' . $h . '<input type="hidden" name="action" value="suspend"><input type="hidden" name="user_id" value="' . e($uid) . '">'
+        $o .= '<details class="act"><summary class="btn danger sm">Suspend</summary><form class="pop" method="post" data-confirm="Suspend the reported player? Report ' . e(app_ref('R', $rid)) . ' is resolved automatically and the reporter sees Player suspended.">' . $h . '<input type="hidden" name="action" value="suspend"><input type="hidden" name="user_id" value="' . e($uid) . '">'
             . '<label>Reason (shown to the player)<input name="reason" required maxlength="500" value="' . e((string) gx($x, array('reason', 'category'), '')) . '"></label><label>Admin notes<textarea name="notes" maxlength="2000"></textarea></label>'
             . '<label class="chk"><input type="checkbox" name="tell" value="1" checked> Send the player a notification</label><button class="btn danger sm" type="submit">Suspend player</button></form></details>';
     }
@@ -94,7 +102,7 @@ if ($id !== '') {
     $x = $rows[0];
     $rep = $cReported ? g($x, $cReported) : null; $by = $cReporter ? g($x, $cReporter) : null;
     $names = load_names(array($rep, $by));
-    echo '<div class="panel"><dl class="kv"><dt>Reported player</dt><dd><b>' . nm($names, $rep) . '</b></dd><dt>Reported by</dt><dd>' . nm($names, $by) . '</dd>';
+    echo '<div class="panel"><dl class="kv"><dt>Ticket</dt><dd class="ref">' . e(app_ref('R', $id)) . '</dd><dt>Reported player</dt><dd><b>' . nm($names, $rep) . '</b></dd><dt>Reported by</dt><dd>' . nm($names, $by) . '</dd>';
     foreach ($x as $k => $v) { if (in_array($k, array($cReported, $cReporter, $pk), true)) { continue; } echo '<dt>' . e(str_replace('_', ' ', $k)) . '</dt><dd>' . app_cell($k, $v, isset($RC[$k]) ? $RC[$k] : '') . '</dd>'; }
     echo '</dl><div style="margin-top:16px">' . report_actions($x, $pk, $cReported, '/admin/app/reports/?id=' . rawurlencode($id)) . '</div></div>';
 
@@ -130,24 +138,31 @@ if (isset($RC['created_at'])) { $q['order'] = 'created_at.desc'; }
 if ($fs === 'open') { $q['status'] = 'in.(' . implode(',', array_unique(array_filter(array(report_status($RT, 'review', $S), 'pending', 'open', 'new', 'under_review')))) . ')'; }
 elseif ($fs !== '' && app_valid_ident($fs)) { $q['status'] = 'eq.' . $fs; }
 $page = max(1, (int) (isset($_GET['page']) ? $_GET['page'] : 1)); $per = 30;
-list($rows, $total, $r) = app_select($RT, $q, $per, ($page - 1) * $per);
+$ticket = app_get('ticket', 20);
+if ($ticket !== '') {
+    list($all, , $r) = app_select($RT, $q, 2000, 0, false);
+    $rows = array_values(array_filter($all, function ($x) use ($pk, $ticket) { return app_ref_match('R', g($x, $pk), $ticket); }));
+    $total = count($rows);
+} else {
+    list($rows, $total, $r) = app_select($RT, $q, $per, ($page - 1) * $per);
+}
 $ids = array(); foreach ($rows as $x) { $ids[] = $cReported ? g($x, $cReported) : null; $ids[] = $cReporter ? g($x, $cReporter) : null; }
 $names = load_names($ids);
 
 $opts = app_enum($RT, 'status') ?: array('pending', 'under_review', 'resolved', 'dismissed');
-echo '<form class="row" method="get"><select name="status"><option value="">All</option><option value="open"' . ($fs === 'open' ? ' selected' : '') . '>Open (to review)</option>';
+echo '<form class="row" method="get"><input name="ticket" value="' . e($ticket) . '" placeholder="Ticket ID, e.g. R-20481" style="width:190px"><select name="status"><option value="">All</option><option value="open"' . ($fs === 'open' ? ' selected' : '') . '>Open (to review)</option>';
 foreach ($opts as $o) { echo '<option' . ($fs === $o ? ' selected' : '') . '>' . e($o) . '</option>'; }
 echo '</select><button class="btn sm" type="submit">Filter</button><span class="muted">' . app_num($total) . ' reports</span></form>' . app_err_box($r);
-echo '<div class="tbl-wrap"><table><tr><th>When</th><th>Reported player</th><th>By</th><th>Reason</th><th>Details</th><th>Proof</th><th>Status</th><th>Actions</th></tr>';
+echo '<div class="tbl-wrap"><table><tr><th>Ticket</th><th>When</th><th>Reported player</th><th>By</th><th>Reason</th><th>Details</th><th>Proof</th><th>Status</th><th>Actions</th></tr>';
 foreach ($rows as $x) {
     $rid = (string) g($x, $pk, '');
     $href = '/admin/app/reports/?id=' . rawurlencode($rid);
     $shot = g($x, 'screenshot_path');
-    echo '<tr><td class="nowrap"><a href="' . e($href) . '">' . app_dt(g($x, 'created_at')) . '</a></td><td><b>' . nm($names, $cReported ? g($x, $cReported) : null) . '</b></td><td>' . nm($names, $cReporter ? g($x, $cReporter) : null) . '</td>';
+    echo '<tr><td class="ref"><a href="' . e($href) . '">' . e(app_ref('R', $rid)) . '</a></td><td class="nowrap">' . app_dt(g($x, 'created_at')) . '</td><td><b>' . nm($names, $cReported ? g($x, $cReported) : null) . '</b></td><td>' . nm($names, $cReporter ? g($x, $cReporter) : null) . '</td>';
     echo '<td>' . app_cell('reason', gx($x, array('reason', 'category'))) . '</td><td class="chat">' . app_cell('d', gx($x, array('details', 'description', 'message', 'comment'))) . '</td>';
     echo '<td>' . ($shot ? '<a href="/admin/app/evidence/?path=' . e(rawurlencode($shot)) . '" target="_blank" rel="noopener">Screenshot</a><br>' : '') . '<a href="' . e($href) . '">Chat &amp; details</a></td>';
     echo '<td>' . app_badge(g($x, 'status')) . '</td><td>' . report_actions($x, $pk, $cReported, $_SERVER['REQUEST_URI']) . '</td></tr>';
 }
-if (!$rows) { echo '<tr><td colspan="8" class="muted">' . ($r['ok'] ? 'No reports.' : 'Could not load reports.') . '</td></tr>'; }
-echo '</table></div>' . ($total !== null ? pager($page, $total, $per) : '');
+if (!$rows) { echo '<tr><td colspan="9" class="muted">' . ($r['ok'] ? ($ticket !== '' ? 'No report with that ticket ID.' : 'No reports.') : 'Could not load reports.') . '</td></tr>'; }
+echo '</table></div>' . ($ticket === '' && $total !== null ? pager($page, $total, $per) : '');
 admin_foot();

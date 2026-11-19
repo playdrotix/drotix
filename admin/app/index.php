@@ -9,6 +9,8 @@ $today = date('Y-m-d') . 'T00:00:00' . date('P');
 $week = date('c', strtotime('-7 days'));
 $cards = array();
 $cards[] = array(app_count($pt), 'Players', '/admin/app/users/');
+$on = app_online(100);
+if ($on['ok']) { $cards[] = array($on['count'], 'Online now', '/admin/app/online/'); }
 if (isset($pc['created_at'])) {
     $cards[] = array(app_count($pt, array('created_at' => 'gte.' . $today)), 'New today', '');
     $cards[] = array(app_count($pt, array('created_at' => 'gte.' . $week)), 'New last 7 days', '');

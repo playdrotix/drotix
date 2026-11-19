@@ -317,9 +317,11 @@ function app_pick_value($t, $col, $prefer) {
         list($rows, , ) = app_select($t, array('select' => $col, $col => 'not.is.null', 'order' => $col . '.asc'), 300, 0, false);
         foreach ($rows as $r) { if (isset($r[$col]) && is_scalar($r[$col]) && !in_array($r[$col], $opts, true)) { $opts[] = $r[$col]; } }
     }
-    foreach ((array) $prefer as $p) { if (in_array($p, $opts, true)) { return $p; } }
-    foreach ((array) $prefer as $p) { foreach ($opts as $o) { if (is_string($o) && stripos($o, $p) !== false) { return $o; } } }
-    return $opts ? $opts[0] : (is_array($prefer) ? $prefer[0] : $prefer);
+    $prefer = (array) $prefer;
+    foreach ($prefer as $p) { if (in_array($p, $opts, true)) { return $p; } }
+    foreach ($prefer as $p) { foreach ($opts as $o) { if (is_string($o) && stripos($o, $p) !== false) { return $o; } } }
+    $isEnum = (bool) app_enum($t, $col);
+    return ($isEnum && $opts) ? $opts[0] : $prefer[0];   // not an enum: use our preferred value, never another existing one
 }
 /** Fill required columns that have no value and no database default (enum / text / json / bool / number). */
 function app_fill_required($t, $row, $hints = array()) {
@@ -381,6 +383,57 @@ function app_set_status($uid, $suspend, $reason) {
 }
 /** Find a table whose name matches $re and has all $cols. */
 function app_table_like($re, $cols = array()) { return app_find_table($cols, $re); }
+
+/** Ticket id exactly like the app: hex digits of the id, first 8 as hex, mod 100000, 5 digits -> "R-20481". */
+function app_ref($prefix, $id) {
+    $hex = preg_replace('/[^0-9a-fA-F]/', '', (string) $id);
+    if (strlen($hex) < 8) { return $prefix . '-?????'; }
+    return $prefix . '-' . str_pad((string) (hexdec(substr($hex, 0, 8)) % 100000), 5, '0', STR_PAD_LEFT);
+}
+/** Does a typed search ("R-20481", "20481", "r20481") match this row's ticket id? */
+function app_ref_match($prefix, $id, $search) {
+    $d = preg_replace('/\D/', '', (string) $search);
+    return $d !== '' && substr(app_ref($prefix, $id), 2) === str_pad($d, 5, '0', STR_PAD_LEFT);
+}
+function app_ago($iso) {
+    $t = strtotime((string) $iso); if (!$t) { return '-'; }
+    $s = time() - $t;
+    if ($s < 60) { return 'just now'; }
+    if ($s < 3600) { return floor($s / 60) . ' min ago'; }
+    if ($s < 86400) { return floor($s / 3600) . ' h ago'; }
+    return floor($s / 86400) . ' d ago';
+}
+/** Players online now (admin_online_now). array('ok', 'count', 'items', 'ids' => set, 'error') — fetched once per request. */
+function app_online($limit = 500) {
+    static $c = array();
+    if (isset($c[$limit])) { return $c[$limit]; }
+    $r = app_rpc('admin_online_now', array('p_limit' => (int) $limit));
+    $items = $r['ok'] ? (array) g($r['data'], 'items', array()) : array();
+    $ids = array(); foreach ($items as $i) { if (!empty($i['user_id'])) { $ids[$i['user_id']] = $i; } }
+    return $c[$limit] = array('ok' => $r['ok'], 'count' => $r['ok'] ? g($r['data'], 'online_count', count($items)) : null, 'items' => $items, 'ids' => $ids, 'error' => $r['error']);
+}
+/** Readable labels for audit actions (game audit + this panel). */
+function app_action_label($a) {
+    $a = preg_replace('/^app_/', '', (string) $a);
+    $m = array('clear_status_text' => 'Removed status line', 'remove_block' => 'Removed block', 'cancel_challenge' => 'Cancelled challenge',
+               'suspend' => 'Suspended player', 'suspend_user' => 'Suspended player', 'reinstate' => 'Reinstated player', 'reinstate_user' => 'Reinstated player',
+               'wallet_credit' => 'Coins credited', 'wallet_debit' => 'Coins debited', 'wallet_adjust' => 'Coins adjusted', 'notify' => 'Sent notification', 'send_notification' => 'Sent notification',
+               'broadcast' => 'Broadcast to all', 'email_change' => 'Changed email', 'password_change' => 'Changed password', 'email_confirm' => 'Verified email',
+               'profile_update' => 'Edited profile', 'update_user_profile' => 'Edited profile', 'account_delete' => 'Deleted account', 'set_admin' => 'Changed admin rights',
+               'report_approve' => 'Report approved', 'report_reject' => 'Report rejected', 'report_review' => 'Report under review', 'report_suspend' => 'Suspended from report', 'update_report' => 'Report status changed',
+               'appeal_approved' => 'Appeal approved', 'appeal_rejected' => 'Appeal rejected', 'review_appeal' => 'Appeal reviewed', 'appeal_suspend' => 'Suspended (appeal)',
+               'tournament_create' => 'Created tournament', 'create_tournament' => 'Created tournament', 'tournament_start' => 'Started tournament', 'generate_bracket' => 'Started tournament',
+               'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row');
+    return isset($m[$a]) ? $m[$a] : ucfirst(str_replace('_', ' ', $a));
+}
+/** Error text for a failed game function, with the fix when no app admin exists. */
+function app_rpc_error($r) {
+    $e = (string) $r['error'];
+    if (stripos($e, 'forbidden') !== false || (isset($r['status']) && $r['status'] === 401) || !app_admin_token()) {
+        $e .= ' (No app admin session: open Players, pick your own account and set is_admin = true.)';
+    }
+    return $e;
+}
 
 function app_log($action, $target = '', $details = '') { audit_log('app_' . $action, $target, is_array($details) ? json_encode($details, JSON_UNESCAPED_UNICODE) : (string) $details); }
 
@@ -477,11 +530,11 @@ function app_require() {
 function app_head($title, $sub) {
     header("Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; form-action 'self'; frame-ancestors 'none'", true);
     admin_head($title, 'app');
-    $tabs = array('users' => array('/admin/app/users/', 'Players'), 'tour' => array('/admin/app/tournaments/', 'Tournaments'),
+    $tabs = array('users' => array('/admin/app/users/', 'Players'), 'online' => array('/admin/app/online/', 'Online now'), 'tour' => array('/admin/app/tournaments/', 'Tournaments'),
                   'reports' => array('/admin/app/reports/', 'Reports'), 'appeals' => array('/admin/app/appeals/', 'Appeals'),
                   'cast' => array('/admin/app/broadcast/', 'Broadcast'), 'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'));
     $tabs['audit'] = array('/admin/app/audit/', 'Audit log');
-    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=3"><script src="/admin/assets/app.js?v=3" defer></script>';
+    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=4"><script src="/admin/assets/app.js?v=4" defer></script>';
     echo '<div class="apptop"><nav class="subnav">';
     foreach ($tabs as $k => $t) { echo '<a href="' . e($t[0]) . '"' . ($k === $sub ? ' class="on"' : '') . '>' . e($t[1]) . '</a>'; }
     echo '</nav></div>';

@@ -45,3 +45,10 @@ tr.win td{background:rgba(255,194,77,.07)}tr.flag td{background:rgba(255,122,154
 .bmatch{background:var(--s);border:1px solid var(--b);border-radius:12px;overflow:hidden}
 .bp{padding:8px 12px;border-bottom:1px solid var(--b);font-size:14px}.bp.bw{background:rgba(47,184,180,.12);font-weight:700}.bp.bl{opacity:.6}
 .bmeta{padding:6px 12px;font-size:12px;color:var(--m)}
+.avw{position:relative;display:inline-block;line-height:0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--b2);vertical-align:middle}
+.dot.on{background:#2ECC71;box-shadow:0 0 6px #2ECC71}.dot.off{background:#E5484D}
+.avw .dot{position:absolute;right:-1px;bottom:-1px;border:2px solid var(--s)}
+.stline{font-style:italic;color:var(--t);margin:2px 0 6px}
+td.ref,dd.ref{font-family:ui-monospace,Consolas,monospace;font-weight:700;color:var(--tl);white-space:nowrap}
+.hint{font-size:11px;width:100%}
