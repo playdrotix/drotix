@@ -47,6 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $RT) {
     if ($rid === '') { flash_set('err', 'Bad report.'); redirect($back); }
     if (in_array($act, array('approve', 'reject', 'review'), true)) {
         $r = set_report($RT, $rid, $act, $notes, $S);
+        if ($r['ok']) {
+            list($rows0, , ) = app_select($RT, array((app_pk($RT) ?: 'id') => 'eq.' . $rid), 1, 0, false);
+            if ($rows0 && $cReporter && g($rows0[0], $cReporter)) {
+                $repName = ''; if ($cReported && g($rows0[0], $cReported)) { list($pp0, , ) = app_select(app_profiles_table(), array(app_profile_idcol() => 'eq.' . $rows0[0][$cReported], 'select' => 'username'), 1, 0, false); $repName = $pp0 ? (string) g($pp0[0], 'username', '') : ''; }
+                $stKey = array('approve' => 'resolved', 'reject' => 'dismissed', 'review' => 'under_review')[$act];
+                app_mail_report($rows0[0][$cReporter], $rid, $stKey, $repName, array('resolved' => 'Action taken', 'dismissed' => 'No action', 'under_review' => 'Being reviewed')[$stKey], $notes);
+            }
+        }
         if ($r['ok']) { app_log('report_' . $act, $rid, $notes); flash_set('ok', app_ref('R', $rid) . ': ' . array('approve' => 'approved (resolved).', 'reject' => 'rejected (dismissed).', 'review' => 'marked under review.')[$act] . ' The reporter is notified.'); }
         else { flash_set('err', 'Failed: ' . $r['error']); }
     } elseif ($act === 'suspend') {
@@ -58,6 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $RT) {
         else { app_auth_update($uid, array('ban_duration' => '876000h')); }
         if ($r['ok']) {
             app_log('report_suspend', $uid, array('report' => $rid, 'reason' => $reason));
+            app_mail_suspended($uid, $reason, app_ref('R', $rid));
+            list($rows0, , ) = app_select($RT, array((app_pk($RT) ?: 'id') => 'eq.' . $rid), 1, 0, false);
+            if ($rows0 && $cReporter && g($rows0[0], $cReporter)) {
+                list($pp0, , ) = app_select(app_profiles_table(), array(app_profile_idcol() => 'eq.' . $uid, 'select' => 'username'), 1, 0, false);
+                app_mail_report($rows0[0][$cReporter], $rid, 'resolved', $pp0 ? (string) g($pp0[0], 'username', '') : '', 'Player suspended', 'The player you reported was suspended.');
+            }
             if (!empty($_POST['tell'])) { app_notify($uid, 'Account suspended', 'Your account was suspended: ' . $reason); }
             flash_set('ok', 'Player suspended; report ' . app_ref('R', $rid) . ' resolved (the reporter sees "Player suspended").');
         } else { flash_set('err', 'Suspend failed: ' . $r['error']); }

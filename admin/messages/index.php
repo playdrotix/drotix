@@ -31,9 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (sb_ok($r)) { $sent[] = 'website notification'; } else { flash_set('err', 'Could not send the notification: ' . $r['error']); redirect('/admin/messages/?id=' . $id); }
         }
         if ($viaMail && !empty($m['email'])) {
-            $from = header_safe(cfg('mail_from', 'no-reply@localhost'));
-            $hdr = 'From: ' . $from . "\r\nReply-To: " . header_safe(cfg('support_email', $from)) . "\r\nContent-Type: text/plain; charset=UTF-8";
-            if (@mail($m['email'], '=?UTF-8?B?' . base64_encode('Re: ' . header_safe(isset($m['topic']) && $m['topic'] !== '' ? $m['topic'] : 'Your message to Drotix')) . '?=', $body . "\n\n-- Drotix team", $hdr)) { $sent[] = 'email'; }
+            require_once __DIR__ . '/../../includes/mailer.php';
+            $topicTxt = isset($m['topic']) && $m['topic'] !== '' ? $m['topic'] : 'Your message to Drotix';
+            list($mok, $merr) = mail_send_template($m['email'], 'contact_reply', 'Re: ' . $topicTxt, array('name' => $m['name'], 'topic' => $topicTxt, 'reply' => $body, 'message_excerpt' => mb_substr((string) $m['message'], 0, 300)), (string) cfg('support_email', ''));
+            if ($mok) { $sent[] = 'email'; } elseif (!$sent) { flash_set('err', 'Email could not be sent: ' . $merr); redirect('/admin/messages/?id=' . $id); }
         }
         if (!$sent) { flash_set('err', 'This message has no visitor ID saved, so it cannot pop up on the website (it was sent before the v3 update, or from a browser that blocked the ID). Tick "also send by email" to answer it, and test with a NEW message sent from the live site. Open Setup check in the menu to verify the database.'); redirect('/admin/messages/?id=' . $id); }
         sb_update($table, array('id' => 'eq.' . $id), array('status' => 'replied'));

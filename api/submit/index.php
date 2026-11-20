@@ -118,7 +118,10 @@ if ($type === 'contact') {
         'status' => 'new', 'ip' => $ip, 'user_agent' => $ua, 'visitor_id' => $vidIn,
     ));
     if (!sb_ok($r)) { error_log('[drotix] contact insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
-    send_notice('New contact message: ' . $topic, "From: $name <$email>\nTopic: $topic\n\n$message\n");
+    send_notice('New contact message: ' . $topic, "From: $name <$email>\nTopic: $topic\n\n$message\n",
+        array('kind' => 'contact message', 'name' => $name, 'email' => $email, 'topic' => $topic !== '' ? $topic : '-', 'message_excerpt' => mb_substr($message, 0, 800), 'admin_path' => 'messages/'));
+    require_once __DIR__ . '/../../includes/mailer.php';
+    mail_send_template($email, 'contact_received', 'We got your message - DROTIX', array('name' => $name, 'message_excerpt' => mb_substr($message, 0, 400)));
     out(200, true, 'Thank you! We got your message. Our reply will pop up here on the website (bell icon) and may also reach your email.');
 }
 
@@ -141,18 +144,34 @@ if ($type === 'tournament') {
         'status' => 'new', 'ip' => $ip, 'user_agent' => $ua, 'visitor_id' => $vidIn,
     ), array('on_conflict' => 'tournament,email'), 'resolution=ignore-duplicates,return=minimal');
     if (!sb_ok($r)) { error_log('[drotix] tournament insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
-    send_notice('New tournament registration: ' . $username, "Name: $name\nPlayer: $username\nEmail: $email\nPhone: $phone\nCity: $city\nLevel: $exp\n");
+    send_notice('New tournament registration: ' . $username, "Name: $name\nPlayer: $username\nEmail: $email\nPhone: $phone\nCity: $city\nLevel: $exp\n",
+        array('kind' => 'tournament registration', 'name' => $name, 'email' => $email, 'topic' => 'Drotix Cup Season 1', 'message_excerpt' => "Player: $username | Phone: $phone | City: $city | Level: $exp", 'admin_path' => 'tournament/'));
+    require_once __DIR__ . '/../../includes/mailer.php';
+    mail_send_template($email, 'tournament_status', 'Drotix Cup: registration received', array('name' => $name, 'username' => $username, 'status' => 'Registered', 'tournament' => 'Drotix Cup Season 1',
+        'starts_at' => 'Date coming soon', 'message' => 'You are registered! We will contact you on WhatsApp / email with the match details.'));
     out(200, true, 'You are registered for Drotix Cup! We will contact you on WhatsApp / email with the match details.');
 }
 
 if ($type === 'waitlist') {
     $source = clean_str(isset($in['source']) ? $in['source'] : 'website', 40);
+    // return=representation: the row comes back only when it is NEW (a repeat signup returns nothing -> no second email)
     $r = sb_insert(tbl('waitlist'),
         array('email' => $email, 'source' => $source, 'ip' => $ip),
         array('on_conflict' => 'email'),
-        'resolution=ignore-duplicates,return=minimal');
+        'resolution=ignore-duplicates,return=representation');
     if (!sb_ok($r)) { error_log('[drotix] waitlist insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
-    out(200, true, 'You are on the list! We will email you when the game launches.');
+    $isNew = is_array($r['data']) && count($r['data']) > 0;
+    if ($isNew) {
+        require_once __DIR__ . '/../../includes/mailer.php';
+        $pos = sb_count(tbl('waitlist'));
+        $vars = array('name' => 'player', 'email' => $email, 'position' => $pos !== null ? number_format($pos) : '-');
+        if ($source === 'footer') {   // footer "Join" (every page): players list / news
+            mail_send_template($email, 'club_welcome', 'Welcome to DROTIX, player #' . $vars['position'], $vars);
+        } else {                      // home "Notify me": launch alert
+            mail_send_template($email, 'waitlist_welcome', 'Launch alert set: DROTIX is coming', $vars);
+        }
+    }
+    out(200, true, $source === 'footer' ? 'You are in! Check your inbox for a welcome email.' : 'You are on the list! We will email you when the game launches.');
 }
 
 /* type === 'delete' */
@@ -166,7 +185,11 @@ $due = gmdate('c', time() + $days * 86400);
 $r = sb_insert(tbl('deletions'), array(
     'username' => $username, 'email' => $email, 'notes' => $notes,
     'status' => 'pending', 'due_at' => $due, 'ip' => $ip, 'user_agent' => $ua,
-));
+), array(), 'return=representation');
+$reqId = (sb_ok($r) && isset($r['data'][0]['id'])) ? 'D-' . strtoupper(substr((string) $r['data'][0]['id'], 0, 8)) : '-';
 if (!sb_ok($r)) { error_log('[drotix] deletion insert failed: ' . $r['status'] . ' ' . $r['error']); out(502, false, $failMsg); }
-send_notice('Account deletion request: ' . $username, "Username: $username\nEmail: $email\nDue by: $due\nNotes: $notes\n");
+send_notice('Account deletion request: ' . $username, "Username: $username\nEmail: $email\nDue by: $due\nNotes: $notes\n",
+    array('kind' => 'account deletion request', 'name' => $username, 'email' => $email, 'topic' => 'Delete account (' . $reqId . ')', 'message_excerpt' => $notes !== '' ? $notes : 'No notes.', 'admin_path' => 'deletions/'));
+require_once __DIR__ . '/../../includes/mailer.php';
+mail_send_template($email, 'deletion_received', 'We received your account deletion request', array('username' => $username, 'email' => $email, 'request_id' => $reqId, 'days' => (string) $days, 'due_date' => date('d M Y', strtotime($due))));
 out(200, true, 'Request received. We will verify it is you and delete your account within ' . $days . ' days.');

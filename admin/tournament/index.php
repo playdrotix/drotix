@@ -23,12 +23,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $titles = array('confirmed' => 'You are in! Drotix Cup seat confirmed', 'waitlisted' => 'Drotix Cup: you are on the waiting list',
                                     'rejected' => 'Drotix Cup: registration update', 'new' => '');
                     $changed = $old && $old[0]['status'] !== $st;
+                    $emailed = '';
+                    if ($old && !empty($old[0]['email']) && ($msg !== '' || ($changed && $titles[$st] !== ''))) {
+                        require_once __DIR__ . '/../../includes/mailer.php';
+                        $label = array('confirmed' => 'Confirmed', 'waitlisted' => 'Waitlisted', 'rejected' => 'Not selected', 'new' => 'Received')[$st];
+                        list($mok, ) = mail_send_template($old[0]['email'], 'tournament_status', $titles[$st] !== '' ? $titles[$st] : 'Message about Drotix Cup', array('name' => $old[0]['name'], 'username' => $old[0]['username'],
+                            'status' => $label, 'tournament' => isset($old[0]['tournament']) ? $old[0]['tournament'] : 'Drotix Cup', 'starts_at' => 'See the message below', 'message' => $msg !== '' ? $msg : 'Open your WhatsApp / email for the match details.'));
+                        $emailed = $mok ? ' Email sent.' : ' (Email failed.)';
+                    }
                     if ($old && !empty($old[0]['visitor_id']) && ($msg !== '' || ($changed && $titles[$st] !== ''))) {
                         sb_insert(tbl('notify'), array('visitor_id' => $old[0]['visitor_id'], 'kind' => 'status',
                             'title' => $titles[$st] !== '' ? $titles[$st] : 'Message about Drotix Cup',
                             'body' => $msg !== '' ? $msg : 'Open your WhatsApp / email for the match details.', 'ref_table' => $table, 'ref_id' => $id));
-                        flash_set('ok', 'Status updated and the player was notified on the website.');
-                    } else { flash_set('ok', 'Status updated.'); }
+                        flash_set('ok', 'Status updated and the player was notified on the website.' . $emailed);
+                    } else { flash_set('ok', 'Status updated.' . $emailed); }
                 } else { flash_set('err', $r['error']); }
             }
         }

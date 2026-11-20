@@ -923,6 +923,90 @@ function app_referral_overview($limit = 50) {
         'total_referrals' => $total !== null ? $total : count($refd), 'referrals_today' => $today, 'coins_to_new_players' => $coinsNew, 'coins_to_referrers' => $coinsRef, 'top_referrers' => $top, 'latest' => $lat));
 }
 
+/* ---------- emails to app players (templates in includes/emails/, sent by includes/mailer.php) ---------- */
+/** Email one app player (address from Supabase Auth). Returns array(ok, error). Never breaks the admin action. */
+function app_mail_player($uid, $template, $subject, $vars = array()) {
+    if (!uuid_ok($uid)) { return array(false, 'bad user'); }
+    $a = app_auth_get($uid);
+    $email = $a['ok'] ? (string) g($a['data'], 'email', '') : '';
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) { return array(false, 'player has no email'); }
+    if (!isset($vars['name'])) {
+        $pt = app_profiles_table(); $idc = app_profile_idcol();
+        list($ps, , ) = app_select($pt, array($idc => 'eq.' . $uid, 'select' => $idc . ',username'), 1, 0, false);
+        $vars['name'] = $ps && g($ps[0], 'username') ? $ps[0]['username'] : 'player';
+    }
+    require_once __DIR__ . '/mailer.php';
+    try { return mail_send_template($email, $template, $subject, $vars); } catch (Throwable $e) { return array(false, $e->getMessage()); }
+}
+function app_mail_suspended($uid, $reason, $ref = '') {
+    return app_mail_player($uid, 'account_suspended', 'Your DROTIX account is suspended', array('reason' => $reason !== '' ? $reason : 'Breaking the fair-play rules', 'date' => date('d M Y, H:i'), 'ref' => $ref !== '' ? $ref : '-'));
+}
+function app_mail_reactivated($uid, $message = '') {
+    return app_mail_player($uid, 'account_reactivated', 'Your DROTIX account is active again', array('message' => $message !== '' ? $message : 'Your suspension was lifted by our team.'));
+}
+/** Readable ticket status for players. */
+function app_ticket_status_label($st) {
+    $m = array('open' => 'Received', 'in_progress' => 'In progress', 'waiting_user' => 'Waiting for your reply', 'resolved' => 'Resolved', 'closed' => 'Closed');
+    return isset($m[$st]) ? $m[$st] : ucfirst(str_replace('_', ' ', (string) $st));
+}
+/** Ticket row by id (table, or the game function). */
+function app_ticket_row($id) {
+    $t = app_ticket_table();
+    if ($t) { list($rows, , ) = app_select($t, array('id' => 'eq.' . $id), 1, 0, false); if ($rows) { return $rows[0]; } }
+    $r = app_get_ticket($id);
+    return $r['ok'] ? (array) g($r['data'], 'ticket', array()) : null;
+}
+/** Email the player about a ticket: $kind = received | reply | status. */
+function app_mail_ticket($ticket, $kind, $status, $message = '') {
+    if (!$ticket || !uuid_ok(g($ticket, 'user_id'))) { return array(false, 'no ticket'); }
+    $ref = app_ticket_ref($ticket); $label = app_ticket_status_label($status);
+    $heading = array('received' => 'We got your ticket', 'reply' => 'We replied', 'status' => 'Ticket ' . strtolower($label));
+    $intro = array('received' => 'Thanks for contacting DROTIX support. Your ticket is open and our team will answer soon, usually within 24 hours.',
+                   'reply' => 'Our support team replied to your ticket. Here is the answer:',
+                   'status' => 'The status of your support ticket changed to ' . $label . '.');
+    $msg = $message !== '' ? $message : array('resolved' => 'We marked this ticket as resolved. If the problem is still there, reply in the app and we will reopen it.',
+        'closed' => 'This ticket is closed. If you need more help, open a new ticket in the app.', 'in_progress' => 'Our team is working on it.', 'open' => 'Subject: ' . g($ticket, 'subject', ''))[in_array($status, array('resolved', 'closed', 'in_progress'), true) ? $status : 'open'];
+    return app_mail_player($ticket['user_id'], 'ticket_update', 'Support ' . $ref . ': ' . ($kind === 'reply' ? 'new reply' : $label),
+        array('ref' => $ref, 'subject' => (string) g($ticket, 'subject', '-'), 'status' => $label, 'heading' => $heading[$kind], 'intro' => $intro[$kind], 'message' => $msg));
+}
+/** Email the reporter about their report. $status: received | resolved | dismissed | closed | under_review */
+function app_mail_report($reporterId, $reportId, $status, $reportedName, $outcome, $message = '') {
+    $label = ucfirst(str_replace('_', ' ', $status === 'received' ? 'received' : $status));
+    $intro = array('received' => 'We received your report. Our team will review it.', 'resolved' => 'We reviewed your report and took action.',
+                   'dismissed' => 'We reviewed your report and did not find a rule break this time.', 'closed' => 'Your report is closed.', 'under_review' => 'Our team is reviewing your report.');
+    return app_mail_player($reporterId, 'report_update', 'Your report ' . app_ref('R', $reportId) . ': ' . $label,
+        array('ref' => app_ref('R', $reportId), 'status' => $label, 'reported' => $reportedName !== '' ? $reportedName : '-', 'outcome' => $outcome,
+              'intro' => isset($intro[$status]) ? $intro[$status] : 'Your report was updated.', 'message' => $message !== '' ? $message : 'Thank you for reporting.'));
+}
+
+/* ---------- account deletion ----------
+ * Edge Function delete-account (checks the caller is an app admin, logs 'delete_account', deletes on the server).
+ * Result: {status:'ok', deleted:true, login_deleted:bool} | {status:'error', reason:'admin'|'in_match'|'tournament'|'forbidden'|'note_required'|..., message} */
+/** array('ok' => bool, 'data' => array, 'reason' => string, 'error' => string) */
+function app_delete_account($uid, $note) {
+    $tok = app_admin_token();
+    if (!$tok) { return array('ok' => false, 'data' => null, 'reason' => 'forbidden', 'error' => 'No app admin session. ' . app_admin_why()); }
+    $h = array('Authorization' => 'Bearer ' . $tok);
+    $pub = (string) cfg('supabase_anon_key', ''); if ($pub !== '') { $h['apikey'] = $pub; }
+    $r = app_http('POST', '/functions/v1/delete-account', array('confirm' => 'DELETE', 'user_id' => $uid, 'note' => $note), $h);
+    $d = is_array($r['data']) ? $r['data'] : array();   // error responses also carry a JSON body
+    $ok = $r['ok'] && g($d, 'status') === 'ok' && !empty($d['deleted']);
+    $reason = $ok ? '' : (string) gx($d, array('reason', 'code', 'error'), ($r['status'] === 401 || $r['status'] === 403) ? 'forbidden' : 'unknown');
+    return array('ok' => $ok, 'data' => $d, 'reason' => $reason, 'error' => $ok ? '' : (string) gx($d, array('message', 'error'), $r['error'] !== '' ? $r['error'] : 'HTTP ' . $r['status']));
+}
+/** {status, total, last_days, items: [{deleted_at, source 'app'|'web'|'admin', login_kept}]} — no personal data by design. */
+function app_account_deletions($days = 30) {
+    $r = app_rpc('admin_account_deletions', array('p_days' => (int) $days));
+    if ($r['ok']) { return $r; }
+    $t = app_has_table('account_deletions') ? 'account_deletions' : app_find_table(array('deleted_at'), '/delet/');
+    if (!$t) { return $r; }
+    $since = date('c', strtotime('-' . (int) $days . ' days'));
+    list($rows, , $x) = app_select($t, array('deleted_at' => 'gte.' . $since, 'order' => 'deleted_at.desc', 'select' => '*'), 2000, 0, false);
+    if (!$x['ok']) { return $r; }
+    $items = array(); foreach ($rows as $w) { $items[] = array('deleted_at' => g($w, 'deleted_at'), 'source' => g($w, 'source', 'app'), 'login_kept' => (bool) g($w, 'login_kept', false)); }
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'total' => app_count($t), 'last_days' => count($items), 'items' => $items));
+}
+
 const APP_UPDATES_BUCKET = 'drotix-app-updates';
 /** One-time signed upload URL (browser uploads the APK straight to Storage; no key in the browser). array(uploadUrl, publicUrl, error) */
 function app_signed_upload($path) {
@@ -1159,7 +1243,7 @@ function app_action_label($a) {
                'report_approve' => 'Report approved', 'report_reject' => 'Report rejected', 'report_review' => 'Report under review', 'report_suspend' => 'Suspended from report', 'update_report' => 'Report status changed',
                'appeal_approved' => 'Appeal approved', 'appeal_rejected' => 'Appeal rejected', 'review_appeal' => 'Appeal reviewed', 'appeal_suspend' => 'Suspended (appeal)',
                'tournament_create' => 'Created tournament', 'create_tournament' => 'Created tournament', 'tournament_start' => 'Started tournament', 'generate_bracket' => 'Started tournament',
-               'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row',
+               'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row', 'delete_account' => 'Deleted player account',
                'publish_legal' => 'Published legal document', 'publish_app_release' => 'Published app release',
                'create_coupon' => 'Created coupon', 'edit_coupon' => 'Edited coupon', 'enable_coupon' => 'Enabled coupon', 'disable_coupon' => 'Disabled coupon',
                'create_banner' => 'Created home banner', 'edit_banner' => 'Edited home banner', 'delete_banner' => 'Deleted home banner',
@@ -1278,7 +1362,7 @@ function app_head($title, $sub) {
     $groups = array(
         array('Players', 'One player at a time', array(
             'users' => array('/admin/app/users/', 'Players'), 'reports' => array('/admin/app/reports/', 'Reports'),
-            'appeals' => array('/admin/app/appeals/', 'Appeals'), 'tickets' => array('/admin/app/tickets/', 'Support tickets'))),
+            'appeals' => array('/admin/app/appeals/', 'Appeals'), 'tickets' => array('/admin/app/tickets/', 'Support tickets'), 'deletions' => array('/admin/app/deletions/', 'Account deletions'))),
         array('Whole app', 'Applies to all players', array(
             'online' => array('/admin/app/online/', 'Online now'), 'cast' => array('/admin/app/broadcast/', 'Broadcast'),
             'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),

@@ -125,3 +125,7 @@ button.chip{cursor:pointer;color:var(--t);font:inherit;font-size:12px;padding:4p
 .tk-img{display:block;max-width:220px;max-height:220px;border-radius:10px;margin-top:8px;border:1px solid var(--b2)}
 .tk-quick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 @media(max-width:900px){.tk-grid{grid-template-columns:1fr}.tk-grid.has-open .tk-list{display:none}.tk-back{display:inline}}
+/* danger zone */
+.danger-zone{margin-top:34px;border:1px solid #B3123E;border-radius:16px;padding:18px 20px;background:rgba(179,18,62,.08)}
+.danger-zone h2{margin:0 0 8px;color:var(--rd)}
+input.bad{outline:2px solid var(--rd)}

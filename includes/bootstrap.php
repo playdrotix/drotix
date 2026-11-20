@@ -117,10 +117,11 @@ function clean_str($v, $max) {
     return substr($v, 0, $max);
 }
 function header_safe($v) { return trim(preg_replace('/[\r\n]+/', ' ', (string) $v)); }
-function send_notice($subject, $body) {
+/** Email the admin about something new on the website (template includes/emails/admin_new_message.html). */
+function send_notice($subject, $body, $vars = array()) {
     $to = (string) cfg('notify_admin_email', '');
     if ($to === '') { return; }
-    $from = header_safe(cfg('mail_from', 'no-reply@localhost'));
-    $headers = "From: " . $from . "\r\nContent-Type: text/plain; charset=UTF-8";
-    @mail($to, '=?UTF-8?B?' . base64_encode(header_safe($subject)) . '?=', $body, $headers);
+    require_once __DIR__ . '/mailer.php';
+    $vars = array_merge(array('kind' => $subject, 'name' => '-', 'email' => '-', 'topic' => '-', 'message_excerpt' => $body, 'time' => date('d M Y, H:i'), 'admin_path' => ''), $vars);
+    mail_send_template($to, 'admin_new_message', 'DROTIX: ' . $subject, $vars, (isset($vars['email']) && filter_var($vars['email'], FILTER_VALIDATE_EMAIL)) ? $vars['email'] : '');
 }

@@ -77,12 +77,11 @@ function adm_send_reset($email) {
     $r = adm_update($row['id'], array('reset_token_hash' => hash('sha256', $token), 'reset_expires_at' => date('c', time() + ADMIN_RESET_MINUTES * 60)));
     if (!sb_ok($r)) { return $r['error']; }
     $link = rtrim((string) cfg('site_url', ''), '/') . '/admin/reset/?t=' . $token;
-    $from = header_safe(cfg('mail_from', 'no-reply@localhost'));
-    $body = "Hello " . ($row['display_name'] ?: $row['username']) . ",\n\nSomeone asked to reset the password of your DROTIX admin account (" . $row['username'] . ").\n"
-          . "Open this link within " . ADMIN_RESET_MINUTES . " minutes to choose a new password:\n\n" . $link . "\n\nIf this was not you, ignore this email; your password stays the same.\n\n-- DROTIX admin";
-    $ok = @mail($row['email'], '=?UTF-8?B?' . base64_encode('Reset your DROTIX admin password') . '?=', $body, 'From: ' . $from . "\r\nContent-Type: text/plain; charset=UTF-8");
-    audit_log('admin_reset_requested', $row['username'], $ok ? 'mail sent' : 'mail() failed');
-    return $ok ? '' : 'mail() failed';
+    require_once __DIR__ . '/mailer.php';
+    list($ok, $err) = mail_send_template($row['email'], 'admin_password_reset', 'Reset your DROTIX admin password', array('name' => $row['display_name'] ?: $row['username'],
+        'username' => $row['username'], 'minutes' => (string) ADMIN_RESET_MINUTES, 'reset_link' => $link, 'ip' => client_ip(), 'time' => date('d M Y, H:i')));
+    audit_log('admin_reset_requested', $row['username'], $ok ? 'mail sent' : $err);
+    return $ok ? '' : $err;
 }
 /** Account for a valid, unexpired reset token, or null. */
 function adm_by_token($token) {

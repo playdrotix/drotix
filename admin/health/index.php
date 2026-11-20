@@ -2,6 +2,15 @@
 /* Setup check: tells you exactly what is missing in config.php or Supabase. */
 require __DIR__ . '/../../includes/admin_layout.php';
 admin_require_login();
+require_once __DIR__ . '/../../includes/mailer.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'test_mail') {
+    csrf_verify();
+    $to = clean_str(isset($_POST['to']) ? $_POST['to'] : '', 200);
+    list($ok, $err) = mail_send_template($to, 'contact_reply', 'DROTIX test email', array('name' => 'Admin', 'topic' => 'Test email', 'reply' => "This is a test email from the DROTIX admin panel.\nIf you can read this, SMTP works.", 'message_excerpt' => 'Setup check'));
+    audit_log('test_email', $to, $ok ? 'sent' : $err);
+    flash_set($ok ? 'ok' : 'err', $ok ? 'Test email sent to ' . $to . '. Check the inbox (and the spam folder).' : 'Test email failed: ' . $err);
+    redirect('/admin/health/');
+}
 
 function row($ok, $title, $detail = '') {
     echo '<tr><td style="width:90px">' . ($ok === true ? '<span class="badge b-teal">OK</span>' : ($ok === null ? '<span class="badge b-gold">CHECK</span>' : '<span class="badge b-red">FIX</span>')) . '</td><td><b>' . e($title) . '</b>' . ($detail !== '' ? '<div class="muted">' . $detail . '</div>' : '') . '</td></tr>';
@@ -57,4 +66,14 @@ if ($tot === null || $withId === null) {
 $cfgOrigins = cfg('allowed_origins', array());
 row(null, 'allowed_origins: ' . (is_array($cfgOrigins) && $cfgOrigins ? e(implode(', ', $cfgOrigins)) : 'not set'), 'The site address you open in the browser must be in this list (with https://), otherwise forms and notifications are refused.');
 echo '</table></div>';
+
+/* email (SMTP) */
+$smtp = cfg('smtp', array());
+$smtpOn = !empty($smtp['host']) && !empty($smtp['password']) && strpos((string) $smtp['password'], 'PASTE_') !== 0;
+echo '<h2>Email (SMTP)</h2><div class="tbl-wrap"><table>';
+row($smtpOn ? true : false, $smtpOn ? 'SMTP: ' . e($smtp['host']) . ':' . e(isset($smtp['port']) ? $smtp['port'] : 587) . ' as ' . e(isset($smtp['username']) ? $smtp['username'] : '') : 'SMTP is not set up',
+    $smtpOn ? 'Emails are sent from ' . e(isset($smtp['from_name']) ? $smtp['from_name'] : 'DROTIX') . ' &lt;' . e(isset($smtp['from_email']) ? $smtp['from_email'] : $smtp['username']) . '&gt;.' : 'Add the <code>smtp</code> block to includes/config.php on the server. Until then PHP mail() is used, which often does not arrive.');
+row(null, 'Templates', e(implode(', ', array_map(function ($f) { return basename($f, '.html'); }, array_filter(glob(__DIR__ . '/../../includes/emails/*.html'), function ($f) { return basename($f) !== 'preview.html'; })))));
+echo '</table></div>';
+echo '<form method="post" class="panel row" style="margin-top:14px">' . csrf_field() . '<input type="hidden" name="action" value="test_mail"><input name="to" type="email" required placeholder="Send a test email to…" style="flex:1;min-width:240px" value="' . e((string) cfg('notify_admin_email', '')) . '"><button class="btn" type="submit">Send test email</button></form>';
 admin_foot();

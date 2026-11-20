@@ -1,0 +1,914 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DROTIX email templates</title>
+<style>
+:root{--bg:#0A0A0C;--s:#17171C;--b:#2A2A33;--t:#F5F5F7;--m:#A8A8B5;--mg:#ED1B76;--tl:#2FB8B4}
+body{margin:0;background:var(--bg);color:var(--t);font:15px/1.5 'Segoe UI',Roboto,sans-serif;padding:28px 16px}
+h1{text-transform:uppercase;letter-spacing:2px;margin:0 0 6px} p{color:var(--m);margin:0 0 24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(660px,1fr));gap:22px}
+@media(max-width:720px){.grid{grid-template-columns:1fr}}
+section{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:14px}
+h2{font-size:16px;margin:2px 4px 12px;display:flex;justify-content:space-between;gap:10px} h2 small{color:var(--tl);font-weight:400}
+iframe{width:100%;height:900px;border:0;border-radius:10px;background:var(--bg)}
+</style></head><body>
+<h1>DROTIX email templates</h1><p>14 templates in the website's Squid Game style, shown with sample data. Each template file uses <code>{{placeholders}}</code> that the server fills in before sending.</p>
+<div class="grid"><section><h2>Reset your DROTIX admin password<small>admin_password_reset.html</small></h2><iframe title="admin_password_reset" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Reset your DROTIX admin password&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Your reset link is valid for 30 minutes.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Admin security&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Reset your password&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hello &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Someone asked to reset the password of your DROTIX admin account &lt;b style=&quot;color:#F5F5F7&quot;&gt;ramesh_042&lt;/b&gt;. Tap the button to choose a new password.&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in/admin/reset/?t=8f2c...e91a&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Choose new password&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.65;color:#A8A8B5&quot;&gt;This link works once and expires in &lt;b style=&quot;color:#FFC24D&quot;&gt;30 minutes&lt;/b&gt;.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Requested from IP&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;223.228.228.95&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Time&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;20 Nov 2026, 22:19&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.65;color:#A8A8B5&quot;&gt;If this was not you, ignore this email. Your password stays the same.&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.65;color:#A8A8B5&quot;&gt;Button not working? Copy this link:&lt;br&gt;&lt;a href=&quot;https://playdrotix.in/admin/reset/?t=8f2c...e91a&quot; style=&quot;color:#2FB8B4;word-break:break-all&quot;&gt;https://playdrotix.in/admin/reset/?t=8f2c...e91a&lt;/a&gt;&lt;/p&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because a password reset was requested for a DROTIX admin account.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Reply from the DROTIX team<small>contact_reply.html</small></h2><iframe title="contact_reply" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Reply from the DROTIX team&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;We answered your message: Coins not added&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Support&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;We replied to you&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Thanks for writing to us. Here is our answer:&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;We checked your purchase with Google Play and added 1,100 coins to your wallet.
+Please open the app and check. Enjoy the game!&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Your topic&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Coins not added&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Your message&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;I bought the 1,000 coin pack but the coins did not show in my wallet...&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Need anything else? Just reply to this email.&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Visit DROTIX&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you contacted DROTIX through playdrotix.in.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>We got your message<small>contact_received.html</small></h2><iframe title="contact_received" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;We got your message&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Thanks for contacting DROTIX. We usually reply within 24 hours.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Message received&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;We got your message&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Your message reached the DROTIX control room. A team member will answer within &lt;b style=&quot;color:#FFC24D&quot;&gt;24 hours&lt;/b&gt;.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;I bought the 1,000 coin pack but the coins did not show in my wallet...&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;You will get our reply by email and as a notification on the website.&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#2FB8B4&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in/faq/&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Read the FAQ&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you sent a message on playdrotix.in.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>New message on DROTIX<small>admin_new_message.html</small></h2><iframe title="admin_new_message" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;New message on DROTIX&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Ramesh wrote about Coins not added&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Admin alert&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;New contact message&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;A new &lt;b style=&quot;color:#F5F5F7&quot;&gt;contact message&lt;/b&gt; arrived on the website.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;From&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Ramesh&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Email&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;&lt;a href=&quot;mailto:ramesh@example.com&quot; style=&quot;color:#2FB8B4&quot;&gt;ramesh@example.com&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Topic&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Coins not added&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Received&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;20 Nov 2026, 22:19&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;I bought the 1,000 coin pack but the coins did not show in my wallet...&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in/admin/messages/&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Open in admin&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      Admin notification from playdrotix.in. Turn it off in includes/config.php (notify_admin_email).&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>We received your account deletion request<small>deletion_received.html</small></h2><iframe title="deletion_received" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;We received your account deletion request&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Your account will be deleted within 2 days.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Account deletion&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Request received&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;ramesh_042&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;We received your request to delete your DROTIX account and its data.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Player&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;ramesh_042&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Email&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;ramesh@example.com&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Request ID&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;D-20481&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Deleted by&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;22 Nov 2026&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;&lt;span style=&quot;display:inline-block;padding:5px 14px;border:1px solid #ED1B76;border-radius:99px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#ED1B76&quot;&gt;Final&lt;/span&gt;&amp;nbsp; Your coins, matches and profile are removed for good. This cannot be undone.&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Changed your mind? Reply to this email before &lt;b style=&quot;color:#FFC24D&quot;&gt;22 Nov 2026&lt;/b&gt; and we will stop it.&lt;/p&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because an account deletion was requested on playdrotix.in.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Your DROTIX account was deleted<small>deletion_completed.html</small></h2><iframe title="deletion_completed" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Your DROTIX account was deleted&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Your account and data are deleted.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Account deletion&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Game over&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;ramesh_042&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;As you asked, your DROTIX account and its data were &lt;b style=&quot;color:#F5F5F7&quot;&gt;deleted&lt;/b&gt; on 22 Nov 2026.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Request ID&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;D-20481&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Completed&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;22 Nov 2026&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Thank you for playing. The door is always open if you want a new game.&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#2FB8B4&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Play again&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      This is the last email about this account.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Launch alert set: DROTIX is coming<small>waitlist_welcome.html</small></h2><iframe title="waitlist_welcome" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Launch alert set: DROTIX is coming&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;We will email you the moment DROTIX is on Google Play and the App Store.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Launch alert&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;You are player #1,284&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Welcome, &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;.&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;You tapped &lt;b style=&quot;color:#F5F5F7&quot;&gt;Notify me&lt;/b&gt;, so your seat is saved. The moment DROTIX Tic Tac Toe lands on &lt;b style=&quot;color:#F5F5F7&quot;&gt;Google Play&lt;/b&gt; and the &lt;b style=&quot;color:#F5F5F7&quot;&gt;App Store&lt;/b&gt;, you get one email with the download link. Nothing else.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Waitlist number&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;#1,284&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Email&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;ramesh@example.com&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;You will get&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Launch day email with the download link&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Until then, challenge &lt;b style=&quot;color:#ED1B76&quot;&gt;The Doll&lt;/b&gt; in your browser. Can you beat Hard?&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Play now in the browser&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.65;color:#A8A8B5&quot;&gt;Do not want this email? Reply &lt;b&gt;STOP&lt;/b&gt; and we remove you.&lt;/p&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you asked to be notified about the DROTIX launch on playdrotix.in.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Welcome to the game, player #{{position}}<small>club_welcome.html</small></h2><iframe title="club_welcome" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Welcome to the game, player #1,284&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;You joined DROTIX: launch news, Drotix Cup tournaments and new modes.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;You are in&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Welcome, player #1,284&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;The doors are open, &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;.&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;You joined the DROTIX players list. Here is what we will send you, never more than a few emails a month:&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;&amp;#9675;&amp;nbsp; App launch&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Download links for Google Play and the App Store&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;&amp;#9651;&amp;nbsp; Drotix Cup&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Tournament dates, sign-ups and winners&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;&amp;#9633;&amp;nbsp; New modes&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;New boards, rules and The Doll upgrades&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Your player number is &lt;b style=&quot;color:#FFC24D&quot;&gt;#1,284&lt;/b&gt;. Warm up now: beat The Doll on Hard and you are ready for the cup.&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Play now&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.65;color:#A8A8B5&quot;&gt;Follow us: &lt;a href=&quot;https://www.instagram.com/playdrotix/&quot; style=&quot;color:#2FB8B4&quot;&gt;Instagram&lt;/a&gt; &amp;middot; &lt;a href=&quot;https://www.facebook.com/playdrotix&quot; style=&quot;color:#2FB8B4&quot;&gt;Facebook&lt;/a&gt; &amp;middot; &lt;a href=&quot;https://www.linkedin.com/company/playdrotix/&quot; style=&quot;color:#2FB8B4&quot;&gt;LinkedIn&lt;/a&gt;&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.65;color:#A8A8B5&quot;&gt;Do not want these emails? Reply &lt;b&gt;STOP&lt;/b&gt; and we remove you.&lt;/p&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you joined the DROTIX players list on playdrotix.in.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Drotix Cup: {{status}}<small>tournament_status.html</small></h2><iframe title="tournament_status" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Drotix Cup: Confirmed&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Your Drotix Cup registration: Confirmed&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Drotix Cup&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Seat Confirmed&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Update on your Drotix Cup registration:&amp;nbsp; &lt;span style=&quot;display:inline-block;padding:5px 14px;border:1px solid #2FB8B4;border-radius:99px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#2FB8B4&quot;&gt;Confirmed&lt;/span&gt;&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Player&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;ramesh_042&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Tournament&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Drotix Cup #3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Starts&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Sun 30 Nov, 18:30 IST&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;You are in! Join the room 10 minutes early. Good luck, player.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in/#tournament&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;See tournament&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you registered for the Drotix Cup on playdrotix.in.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Your DROTIX account is suspended<small>account_suspended.html</small></h2><iframe title="account_suspended" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Your DROTIX account is suspended&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Your account was suspended: Abusive chat messages&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Account&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Account suspended&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Your DROTIX account was &lt;b style=&quot;color:#ED1B76&quot;&gt;suspended&lt;/b&gt;. You cannot play online until it is active again.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Reason&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Abusive chat messages&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Date&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;22 Nov 2026&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Reference&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;T-00012&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Think this is a mistake? Open the DROTIX app and tap &lt;b style=&quot;color:#F5F5F7&quot;&gt;Appeal&lt;/b&gt;, or reply to this email. We review every appeal.&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Open DROTIX&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because of a change to your DROTIX account.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Your DROTIX account is active again<small>account_reactivated.html</small></h2><iframe title="account_reactivated" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Your DROTIX account is active again&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Welcome back: your account is active again.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Account&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Welcome back&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Good news: your DROTIX account is &lt;b style=&quot;color:#2FB8B4&quot;&gt;active again&lt;/b&gt;. You can sign in and play.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;You are in! Join the room 10 minutes early. Good luck, player.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.65;color:#A8A8B5&quot;&gt;Please follow the fair-play rules so the game stays fun for everyone.&lt;/p&gt;&lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:26px 0 8px&quot;&gt;
+  &lt;tr&gt;&lt;td align=&quot;center&quot; bgcolor=&quot;#D4156B&quot; style=&quot;border-radius:12px;&quot;&gt;
+    &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;display:inline-block;padding:15px 30px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:12px;&quot;&gt;Play now&lt;/a&gt;
+  &lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because of a change to your DROTIX account.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Support ticket {{ref}}: {{status}}<small>ticket_update.html</small></h2><iframe title="ticket_update" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Support ticket T-00012: Confirmed&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;We replied to your support ticket.&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Support ticket T-00012&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;We replied&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;We replied to your support ticket.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Ticket&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;T-00012&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Subject&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Coins not added after payment&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Status&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Confirmed&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;You are in! Join the room 10 minutes early. Good luck, player.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;To answer, open the DROTIX app &amp;rarr; &lt;b style=&quot;color:#F5F5F7&quot;&gt;Support&lt;/b&gt; &amp;rarr; ticket T-00012.&lt;/p&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you contacted DROTIX support in the app.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Your report {{ref}}: {{status}}<small>report_update.html</small></h2><iframe title="report_update" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Your report T-00012: Confirmed&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Update on your report T-00012: Confirmed&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Report T-00012&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Report Confirmed&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;We replied to your support ticket.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Report&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;T-00012&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;About player&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;player_777&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Status&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Confirmed&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Outcome&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Player suspended&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;You are in! Join the room 10 minutes early. Good luck, player.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Thank you for helping keep DROTIX fair. You can see your reports in the app under &lt;b style=&quot;color:#F5F5F7&quot;&gt;My reports&lt;/b&gt;.&lt;/p&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you reported a player in the DROTIX app.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section><h2>Your appeal {{ref}}: {{status}}<small>appeal_update.html</small></h2><iframe title="appeal_update" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;
+&lt;meta name=&quot;x-apple-disable-message-reformatting&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;dark&quot;&gt;
+&lt;meta name=&quot;supported-color-schemes&quot; content=&quot;dark&quot;&gt;
+&lt;title&gt;Your appeal T-00012: Confirmed&lt;/title&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  body{margin:0;padding:0;background:#0A0A0C;}
+  a{color:#2FB8B4;}
+  @media (max-width:620px){ .wrap{width:100%!important} .pad{padding:26px 20px!important} .h1{font-size:24px!important} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body style=&quot;margin:0;padding:0;background:#0A0A0C;&quot;&gt;
+&lt;!-- preheader: the grey preview line in the inbox --&gt;
+&lt;div style=&quot;display:none;max-height:0;overflow:hidden;opacity:0;color:transparent&quot;&gt;Your appeal was reviewed: Confirmed&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&amp;#8199;&amp;#847;&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#0A0A0C&quot; style=&quot;background:#0A0A0C;&quot;&gt;
+&lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+  &lt;table role=&quot;presentation&quot; class=&quot;wrap&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:600px;max-width:600px;&quot;&gt;
+
+    &lt;!-- header: logo + brand --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:6px 0 22px;&quot;&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; target=&quot;_blank&quot; style=&quot;text-decoration:none;&quot;&gt;
+        &lt;img src=&quot;https://playdrotix.in/assets/img/logo-1024.png&quot; width=&quot;56&quot; height=&quot;56&quot; alt=&quot;DROTIX&quot; style=&quot;display:block;border:0;border-radius:14px;margin:0 auto 10px;&quot;&gt;
+        &lt;span style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;&quot;&gt;DROTIX&lt;/span&gt;
+      &lt;/a&gt;
+      &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;&quot;&gt;&amp;#9675; &amp;#9651; &amp;#9633;&lt;/div&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- card --&gt;
+    &lt;tr&gt;&lt;td style=&quot;background:#17171C;border:1px solid #ED1B76;border-radius:20px;&quot; bgcolor=&quot;#17171C&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot;&gt;
+        &lt;tr&gt;&lt;td style=&quot;height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;td class=&quot;pad&quot; style=&quot;padding:36px 40px 34px;&quot;&gt;
+          &lt;div style=&quot;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;&quot;&gt;Appeal T-00012&lt;/div&gt;
+          &lt;h1 class=&quot;h1&quot; style=&quot;margin:0 0 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;&quot;&gt;Appeal Confirmed&lt;/h1&gt;
+          &lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;Hi &lt;b style=&quot;color:#F5F5F7&quot;&gt;Ramesh&lt;/b&gt;,&lt;/p&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5&quot;&gt;We replied to your support ticket.&lt;/p&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:22px 0;background:#1E1E26;border:1px solid #2A2A33;border-radius:12px;border-collapse:separate;overflow:hidden&quot;&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Appeal&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;T-00012&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:13px;color:#A8A8B5;border-bottom:1px solid #2A2A33;width:42%&quot;&gt;Decision&lt;/td&gt;
+      &lt;td style=&quot;padding:10px 16px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#F5F5F7;font-weight:600;border-bottom:1px solid #2A2A33&quot;&gt;Confirmed&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:20px 0&quot;&gt;&lt;tr&gt;
+  &lt;td style=&quot;border-left:3px solid #ED1B76;background:#1E1E26;border-radius:0 10px 10px 0;padding:14px 18px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#F5F5F7;white-space:pre-wrap&quot;&gt;You are in! Join the room 10 minutes early. Good luck, player.&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p style=&quot;margin:0 0 14px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.65;color:#A8A8B5&quot;&gt;Questions? Reply to this email.&lt;/p&gt;
+        &lt;/td&gt;&lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+    &lt;!-- footer --&gt;
+    &lt;tr&gt;&lt;td align=&quot;center&quot; style=&quot;padding:24px 20px 6px;font-family:&#x27;Outfit&#x27;,&#x27;Segoe UI&#x27;,Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;&quot;&gt;
+      You get this email because you sent an appeal in the DROTIX app.&lt;br&gt;
+      &lt;a href=&quot;https://playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;mailto:support@playdrotix.in&quot; style=&quot;color:#2FB8B4;text-decoration:none;&quot;&gt;support@playdrotix.in&lt;/a&gt; &amp;nbsp;&amp;middot;&amp;nbsp;
+      &lt;a href=&quot;https://playdrotix.in/privacy-policy/&quot; style=&quot;color:#6E6E7A;&quot;&gt;Privacy&lt;/a&gt;&lt;br&gt;
+      Drotix &amp;middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India&lt;br&gt;
+      &lt;span style=&quot;color:#4A4A55;&quot;&gt;Drotix is an independent game and is not affiliated with any TV series. Coins have no cash value.&lt;/span&gt;
+    &lt;/td&gt;&lt;/tr&gt;
+
+  &lt;/table&gt;
+&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section></div></body></html>

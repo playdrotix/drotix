@@ -48,12 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $st = isset($_POST['set_status'], $STAT[$_POST['set_status']]) ? (string) $_POST['set_status'] : 'waiting_user';
         if ($msg === '') { flash_set('err', 'Write a reply first.'); redirect($back); }
         $r = app_reply_ticket($tid, mb_substr($msg, 0, 4000), $st);
-        if ($r['ok']) { app_log('reply_ticket', $tid, $st); flash_set('ok', 'Reply sent (the player gets a notification). Status: ' . $STAT[$st] . '.'); } else { flash_set('err', 'Reply failed: ' . app_rpc_error($r)); }
+        if ($r['ok']) { app_log('reply_ticket', $tid, $st); $mm = app_mail_ticket(app_ticket_row($tid), 'reply', $st, $msg); flash_set('ok', 'Reply sent (notification' . ($mm[0] ? ' + email' : '') . '). Status: ' . $STAT[$st] . '.'); } else { flash_set('err', 'Reply failed: ' . app_rpc_error($r)); }
     } elseif ($act === 'status') {
         $st = isset($_POST['set_status'], $STAT[$_POST['set_status']]) ? (string) $_POST['set_status'] : '';
         $pr = isset($_POST['priority']) && in_array($_POST['priority'], array('normal', 'high'), true) ? (string) $_POST['priority'] : null;
         if ($st === '') { flash_set('err', 'Choose a status.'); redirect($back); }
         $r = app_set_ticket_status($tid, $st, $pr);
+        if ($r['ok'] && in_array($st, array('in_progress', 'resolved', 'closed'), true)) { app_mail_ticket(app_ticket_row($tid), 'status', $st); }
         if ($r['ok']) { app_log('ticket_status', $tid, $st . ($pr ? ' / ' . $pr : '')); flash_set('ok', 'Ticket: ' . $STAT[$st] . ($pr ? ', priority ' . $pr : '') . '.'); } else { flash_set('err', 'Failed: ' . app_rpc_error($r)); }
     } elseif ($act === 'credit') {
         $uid = isset($_POST['user_id']) && uuid_ok($_POST['user_id']) ? (string) $_POST['user_id'] : '';

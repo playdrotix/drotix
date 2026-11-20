@@ -1,0 +1,124 @@
+You are working in my Supabase dashboard in this Chrome browser (I am already logged in).
+Project: https://hbjaisdfhnehspwscifh.supabase.co  (open it from the dashboard).
+Goal: make every Supabase Auth email of my game DROTIX use my own mail server and my own design.
+
+================================================================
+PART A - CUSTOM SMTP  (Authentication -> Emails -> SMTP Settings; in some versions: Project Settings -> Authentication -> SMTP)
+================================================================
+Turn ON "Enable custom SMTP" and fill in:
+- Sender email:  noreply@playdrotix.in
+- Sender name:   DROTIX
+- Host:          mail.playdrotix.in
+- Port:          587
+- Username:      noreply@playdrotix.in
+- Password:      STOP HERE and ask me to type the password myself. Never type, guess or store a password.
+- Minimum interval between emails: leave the default.
+After I have typed the password, click Save. Then open Authentication -> Rate Limits and, if "emails sent per hour" is very low
+(for example 2 or 4), set it to 100 and Save. Do not change any other setting (Site URL, redirect URLs, providers, keys).
+
+================================================================
+PART B - EMAIL TEMPLATES  (Authentication -> Emails -> Templates)
+================================================================
+There is one tab per email: Confirm signup, Invite user, Magic Link, Change Email Address, Reset Password, Reauthentication.
+For EACH of the 6 tabs: set the Subject, then replace the whole "Message body" (switch to the HTML / Source view if there is one)
+with the BASE TEMPLATE below, after putting the right values in place of [[EYEBROW]], [[HEADING]] and [[BODY]]. Then click Save.
+Keep the Supabase variables exactly as written, with the spaces: {{ .ConfirmationURL }}  {{ .Token }}  {{ .Email }}  {{ .NewEmail }}
+
+---------------- BASE TEMPLATE (copy exactly) ----------------
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>DROTIX</title></head>
+<body style="margin:0;padding:0;background:#0A0A0C;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0A0A0C" style="background:#0A0A0C;"><tr><td align="center" style="padding:28px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+<tr><td align="center" style="padding:6px 0 22px;">
+<a href="https://playdrotix.in" target="_blank" style="text-decoration:none;"><img src="https://playdrotix.in/assets/img/logo-1024.png" width="56" height="56" alt="DROTIX" style="display:block;border:0;border-radius:14px;margin:0 auto 10px;"><span style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;letter-spacing:6px;color:#F5F5F7;">DROTIX</span></a>
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;letter-spacing:10px;color:#ED1B76;margin-top:6px;">&#9675; &#9651; &#9633;</div>
+</td></tr>
+<tr><td bgcolor="#17171C" style="background:#17171C;border:1px solid #ED1B76;border-radius:20px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="height:4px;background:#ED1B76;border-radius:20px 20px 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
+<tr><td style="padding:34px 36px 32px;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;letter-spacing:4px;text-transform:uppercase;color:#2FB8B4;margin-bottom:10px;">[[EYEBROW]]</div>
+<h1 style="margin:0 0 18px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.2;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#F5F5F7;">[[HEADING]]</h1>
+[[BODY]]
+</td></tr></table>
+</td></tr>
+<tr><td align="center" style="padding:24px 20px 6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#6E6E7A;">
+<a href="https://playdrotix.in" style="color:#2FB8B4;text-decoration:none;">playdrotix.in</a> &nbsp;&middot;&nbsp; <a href="mailto:support@playdrotix.in" style="color:#2FB8B4;text-decoration:none;">support@playdrotix.in</a> &nbsp;&middot;&nbsp; <a href="https://playdrotix.in/privacy-policy/" style="color:#6E6E7A;">Privacy</a><br>
+Drotix &middot; Kasidih, Sakchi, Jamshedpur, Jharkhand 831001, India<br>
+<span style="color:#4A4A55;">Drotix is an independent game and is not affiliated with any TV series.</span>
+</td></tr>
+</table></td></tr></table>
+</body></html>
+---------------- END OF BASE TEMPLATE ----------------
+
+BUILDING BLOCKS for [[BODY]] (copy exactly; only replace the CAPITAL words):
+INTRO  = <p style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#A8A8B5">INTRO_TEXT</p>
+BUTTON = <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 8px"><tr><td align="center" bgcolor="#D4156B" style="border-radius:12px"><a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 30px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;color:#FFFFFF;text-decoration:none;border-radius:12px">BUTTON_LABEL</a></td></tr></table>
+CODE   = <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#A8A8B5">CODE_LABEL</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:12px 0 6px"><tr><td style="background:#1E1E26;border:1px dashed #2FB8B4;border-radius:12px;padding:14px 22px;font-family:Consolas,Menlo,monospace;font-size:30px;font-weight:800;letter-spacing:8px;color:#F5F5F7">{{ .Token }}</td></tr></table>
+NOTE   = <p style="margin:18px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#6E6E7A">NOTE_TEXT</p>
+[[BODY]] = the blocks listed for that email, one after another, in that order.
+
+---------------- THE 6 EMAILS ----------------
+1) Confirm signup
+   Subject: Confirm your DROTIX account
+   [[EYEBROW]] = Welcome, player      [[HEADING]] = Confirm your email
+   [[BODY]] = INTRO + BUTTON + CODE + NOTE
+     INTRO_TEXT   = Thanks for joining <b style="color:#F5F5F7">DROTIX</b>. Tap the button to confirm <b style="color:#F5F5F7">{{ .Email }}</b> and start playing.
+     BUTTON_LABEL = CONFIRM EMAIL
+     CODE_LABEL   = Or enter this code in the app:
+     NOTE_TEXT    = Did not sign up? Ignore this email and no account is created.
+
+2) Invite user
+   Subject: You are invited to DROTIX
+   [[EYEBROW]] = Invitation           [[HEADING]] = You are invited
+   [[BODY]] = INTRO + BUTTON + NOTE
+     INTRO_TEXT   = You have been invited to join <b style="color:#F5F5F7">DROTIX</b>. Tap the button to accept and set up your account.
+     BUTTON_LABEL = ACCEPT INVITE
+     NOTE_TEXT    = Not expecting this? Ignore this email.
+
+3) Magic Link
+   Subject: Your DROTIX sign-in link
+   [[EYEBROW]] = Sign in              [[HEADING]] = Your sign-in link
+   [[BODY]] = INTRO + BUTTON + CODE + NOTE
+     INTRO_TEXT   = Tap the button to sign in to <b style="color:#F5F5F7">DROTIX</b> as <b style="color:#F5F5F7">{{ .Email }}</b>. No password needed.
+     BUTTON_LABEL = SIGN IN
+     CODE_LABEL   = Or enter this code in the app:
+     NOTE_TEXT    = Did not ask to sign in? Ignore this email. Your account is safe.
+
+4) Change Email Address
+   Subject: Confirm your new DROTIX email
+   [[EYEBROW]] = Account              [[HEADING]] = Confirm new email
+   [[BODY]] = INTRO + BUTTON + NOTE
+     INTRO_TEXT   = Confirm that you want to change your DROTIX email from <b style="color:#F5F5F7">{{ .Email }}</b> to <b style="color:#F5F5F7">{{ .NewEmail }}</b>.
+     BUTTON_LABEL = CONFIRM CHANGE
+     NOTE_TEXT    = Did not ask for this? Ignore this email and contact support@playdrotix.in.
+
+5) Reset Password
+   Subject: Reset your DROTIX password
+   [[EYEBROW]] = Account security     [[HEADING]] = Reset your password
+   [[BODY]] = INTRO + BUTTON + CODE + NOTE
+     INTRO_TEXT   = Someone asked to reset the password of your DROTIX account <b style="color:#F5F5F7">{{ .Email }}</b>. Tap the button to choose a new one.
+     BUTTON_LABEL = RESET PASSWORD
+     CODE_LABEL   = Or enter this code in the app:
+     NOTE_TEXT    = Did not ask for this? Ignore this email. Your password stays the same.
+
+6) Reauthentication
+   Subject: Your DROTIX verification code
+   [[EYEBROW]] = Account security     [[HEADING]] = Verify it is you
+   [[BODY]] = INTRO + CODE + NOTE      (no button in this one)
+     INTRO_TEXT   = Use this code in the DROTIX app to confirm it is really you:
+     CODE_LABEL   = Your code:
+     NOTE_TEXT    = Did not ask for a code? Change your password and contact support@playdrotix.in.
+
+================================================================
+RULES
+================================================================
+- Change ONLY the SMTP settings, the rate limit and these 6 templates. Nothing else.
+- Never type a password, never copy or show API keys or secrets.
+- After saving each template, look at the preview (if the dashboard shows one) and check: dark background, magenta button,
+  DROTIX logo at the top, and the {{ .ConfirmationURL }} / {{ .Token }} variables still there.
+- If a tab or field has a different name than described, tell me what you see and wait.
+
+FINAL REPORT: list what you changed (SMTP on/off, each template saved yes/no). Then tell me to test: sign up in the DROTIX app
+with a new email (or use "Send test email" / "Invite user" in Authentication -> Users) and check the inbox and spam folder.

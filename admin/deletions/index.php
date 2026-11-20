@@ -27,7 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $patch = array('status' => $st, 'admin_note' => $note,
                        'completed_at' => ($st === 'completed') ? (!empty($req['completed_at']) ? $req['completed_at'] : gmdate('c')) : null);
         $r = sb_update($table, array('id' => 'eq.' . $id), $patch);
-        if (sb_ok($r)) { audit_log('deletion_update', $id, $st); flash_set('ok', 'Saved.'); } else { flash_set('err', 'Could not save: ' . $r['error']); }
+        if (sb_ok($r)) {
+            audit_log('deletion_update', $id, $st);
+            $mailNote = '';
+            if ($st === 'completed' && $req['status'] !== 'completed') {
+                require_once __DIR__ . '/../../includes/mailer.php';
+                list($mok, $merr) = mail_send_template($req['email'], 'deletion_completed', 'Your DROTIX account was deleted', array('username' => $req['username'], 'request_id' => 'D-' . strtoupper(substr($id, 0, 8)), 'date' => date('d M Y')));
+                $mailNote = $mok ? ' The player was emailed.' : ' (Email failed: ' . $merr . ')';
+            }
+            flash_set('ok', 'Saved.' . $mailNote);
+        } else { flash_set('err', 'Could not save: ' . $r['error']); }
         redirect('/admin/deletions/?id=' . $id);
     }
     if ($act === 'app_delete' && $adOn) {
@@ -43,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $note = trim((string) $req['admin_note'] . "\nApp data deleted: " . $n . ' row(s) on ' . gmdate('Y-m-d H:i') . ' UTC by ' . $_SESSION['admin']);
         sb_update($table, array('id' => 'eq.' . $id), array('status' => 'completed', 'completed_at' => gmdate('c'), 'admin_note' => $note));
         audit_log('app_data_deleted', $id, $n . ' row(s) in ' . $ad['table']);
+        if ($req['status'] !== 'completed') { require_once __DIR__ . '/../../includes/mailer.php'; mail_send_template($req['email'], 'deletion_completed', 'Your DROTIX account was deleted', array('username' => $req['username'], 'request_id' => 'D-' . strtoupper(substr($id, 0, 8)), 'date' => date('d M Y'))); }
         flash_set('ok', 'Deleted ' . $n . ' row(s) from ' . $ad['table'] . ' and marked the request completed.');
         redirect('/admin/deletions/?id=' . $id);
     }

@@ -59,6 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $AT) {
 
     if ($r['ok']) {
         app_log($dec === 'suspend' ? 'appeal_suspend' : 'appeal_' . $dec, $aid, $notes);
+        if (uuid_ok($uid)) {
+            if ($dec === 'approved') { $mm = app_mail_reactivated($uid, 'Your appeal ' . $ref . ' was approved.' . ($notes !== '' ? ' ' . $notes : '')); }
+            elseif ($dec === 'rejected') { $mm = app_mail_player($uid, 'appeal_update', 'Your appeal ' . $ref . ': rejected', array('ref' => $ref, 'status' => 'Rejected', 'intro' => 'We reviewed your appeal. Your account stays suspended.', 'message' => $notes !== '' ? $notes : 'The suspension remains in place.')); }
+            else { $mm = app_mail_suspended($uid, app_post('reason', 500), $ref); }
+            $msgs[] = $mm[0] ? 'email sent' : 'email not sent: ' . $mm[1];
+        }
         if (uuid_ok($uid)) { $n = app_notify($uid, $title, $body); $msgs[] = $n['ok'] ? 'player notified' : 'notification failed: ' . $n['error']; }
         flash_set('ok', array('approved' => 'Appeal approved: the player is active again', 'rejected' => 'Appeal rejected', 'suspend' => 'Appeal rejected and player suspended')[$dec] . ' (' . $ref . ($msgs ? ', ' . implode(', ', $msgs) : '') . ').');
     } else { flash_set('err', 'Failed: ' . app_rpc_error($r)); }

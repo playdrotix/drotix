@@ -70,7 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$r['ok']) { $r = app_set_status($uid, $susp, $reason); }
         elseif ($susp && !empty($_POST['auth_ban'])) { app_auth_update($uid, array('ban_duration' => '876000h')); }
         elseif (!$susp) { app_auth_update($uid, array('ban_duration' => 'none')); }
-        if ($r['ok']) { app_log($act, $uid, $reason); flash_set('ok', $susp ? 'Player suspended.' : 'Player reinstated.'); } else { $fail($r, $susp ? 'Suspend' : 'Reinstate'); }
+        if ($r['ok']) {
+            app_log($act, $uid, $reason);
+            list($mok, $merr) = $susp ? app_mail_suspended($uid, $reason) : app_mail_reactivated($uid);
+            flash_set('ok', ($susp ? 'Player suspended.' : 'Player reinstated.') . ($mok ? ' Email sent.' : ' (Email not sent: ' . $merr . ')'));
+        } else { $fail($r, $susp ? 'Suspend' : 'Reinstate'); }
     } elseif ($act === 'wallet') {
         $amount = (int) (isset($_POST['amount']) ? $_POST['amount'] : 0);
         $dir = (isset($_POST['direction']) && $_POST['direction'] === 'debit') ? 'debit' : 'credit';
@@ -140,10 +144,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $r = uuid_ok($cid) ? app_rpc('admin_cancel_challenge', array('p_challenge_id' => $cid)) : array('ok' => false, 'error' => 'Bad challenge id.');
         if ($r['ok']) { app_log('cancel_challenge', $uid, $cid); flash_set('ok', 'Challenge cancelled.'); } else { flash_set('err', 'Cancel failed: ' . app_rpc_error($r)); }
     } elseif ($act === 'delete_account') {
-        if (strtoupper(trim(isset($_POST['confirm_word']) ? (string) $_POST['confirm_word'] : '')) !== 'DELETE') { flash_set('err', 'Type DELETE to confirm.'); redirect($back); }
-        $r = app_auth_delete($uid);
-        if ($r['ok']) { app_log('account_delete', $uid); flash_set('ok', 'Account deleted.'); redirect('/admin/app/users/'); }
-        $fail($r, 'Delete');
+        $note = app_post('note', 500);
+        list($prow, ) = load_profile($PT, $IDC, $uid);
+        $uname = (string) gx($prow, array('username', 'display_name'), '');
+        if (mb_strlen($note) < 3) { $_SESSION['del_err'] = array('uid' => $uid, 'field' => 'note', 'msg' => 'Write a reason / note (at least 3 characters).'); redirect($back . '#danger'); }
+        if ($uname !== '' && (string) (isset($_POST['confirm_username']) ? $_POST['confirm_username'] : '') !== $uname) { $_SESSION['del_err'] = array('uid' => $uid, 'field' => 'username', 'msg' => 'The username you typed does not match.'); redirect($back . '#danger'); }
+        if (g($prow, 'is_admin')) { $_SESSION['del_err'] = array('uid' => $uid, 'field' => '', 'msg' => "Admin accounts can't be deleted. Remove the admin role first."); redirect($back . '#danger'); }
+        $r = app_delete_account($uid, $note);
+        if ($r['ok']) {
+            app_log('delete_account', $uid, $note);
+            flash_set('ok', !empty($r['data']['login_deleted']) || !array_key_exists('login_deleted', $r['data']) ? 'Account deleted.' : 'App account deleted. The login was kept because the website still uses it.');
+            redirect('/admin/app/users/');
+        }
+        $msgs = array('admin' => "Admin accounts can't be deleted. Remove the admin role first.", 'in_match' => 'The player is in a match right now. Try again in a few minutes.',
+                      'tournament' => 'The player has an unfinished tournament match. Try again after it ends.', 'forbidden' => 'Only admins can do this.',
+                      'note_required' => 'A reason / note is required.');
+        $_SESSION['del_err'] = array('uid' => $uid, 'field' => $r['reason'] === 'note_required' ? 'note' : '', 'msg' => isset($msgs[$r['reason']]) ? $msgs[$r['reason']] : 'Could not delete. Try again.', 'detail' => $r['reason'] . ($r['error'] !== '' ? ': ' . $r['error'] : ''));
+        redirect($back . '#danger');
     }
     redirect($back);
 }
@@ -277,8 +294,7 @@ echo '<details class="act"><summary class="btn ghost sm">Change password</summar
 if ($a && !g($a, 'email_confirmed_at')) { echo '<form method="post" data-confirm="Mark the email as verified?">' . hid($id, $tab, 'confirm_email') . '<button class="btn ghost sm" type="submit">Verify email</button></form>'; }
 echo '<details class="act"><summary class="btn ghost sm">Send notification</summary><form class="pop" method="post" data-confirm="Send this notification?">' . hid($id, $tab, 'notify')
     . '<label>Title<input name="title" required maxlength="80"></label><label>Message<textarea name="body" required maxlength="500"></textarea></label><button class="btn sm" type="submit">Send</button></form></details>';
-echo '<details class="act"><summary class="btn danger sm">Delete account</summary><form class="pop" method="post" data-confirm="Permanently delete this account? This cannot be undone.">' . hid($id, $tab, 'delete_account')
-    . '<div class="warn" style="margin:0">Deletes the login account. Game data linked to it may be deleted too.</div><label>Type DELETE<input name="confirm_word" required autocomplete="off"></label><button class="btn danger sm" type="submit">Delete permanently</button></form></details>';
+echo '<a class="btn danger sm" href="#danger">Delete account&hellip;</a>';
 echo '</div></div>';
 
 /* ---------- tabs ---------- */
@@ -399,4 +415,19 @@ elseif ($tab === 'data') {
         echo '<h2><a href="/admin/app/data/?t=' . e(rawurlencode($t)) . '&amp;user=' . e($id) . '">' . e($t) . '</a> <span class="muted" style="font-size:13px">' . app_num($total) . ' rows</span></h2>' . app_rows_table($rows, $t);
     }
 }
+/* ---------- danger zone: delete the account (Edge Function delete-account) ---------- */
+$isAdminP = (bool) g($p, 'is_admin');
+$de = (isset($_SESSION['del_err']['uid']) && $_SESSION['del_err']['uid'] === $id) ? $_SESSION['del_err'] : null; unset($_SESSION['del_err']);
+echo '<div class="danger-zone" id="danger"><h2>Danger zone</h2>';
+if ($de) { echo '<div class="flash err">' . e($de['msg']) . (!empty($de['detail']) ? '<div class="muted" style="font-size:12px">' . e($de['detail']) . '</div>' : '') . '</div>'; }
+echo '<p><b>Delete account</b> permanently deletes this player\'s DROTIX account: profile, username, photo, mobile, coins and coin / purchase history, matches, friends, chat, challenges, notifications, support tickets, reports and their screenshots. <b>It cannot be undone.</b> The username <b>' . e($name) . '</b> can never be registered again.</p>';
+if ($isAdminP) {
+    echo '<div class="warn">Admin accounts can\'t be deleted. Remove the admin role first (Profile &amp; account &rarr; is_admin = false).</div>';
+} else {
+    echo '<form method="post" id="delForm" data-username="' . e($name) . '">' . hid($id, $tab, 'delete_account') . '<div class="fgrid">';
+    echo '<label>Reason / note (required)<input name="note" id="delNote" required minlength="3" maxlength="500" placeholder="Deletion request by email on ' . e(date('d M Y')) . '"' . ($de && $de['field'] === 'note' ? ' class="bad" autofocus' : '') . '></label>';
+    echo '<label>Type the username <b>' . e($name) . '</b> to confirm<input name="confirm_username" id="delUser" required autocomplete="off"' . ($de && $de['field'] === 'username' ? ' class="bad"' : '') . '></label></div>';
+    echo '<button class="btn danger" type="submit" id="delBtn" disabled>Delete permanently</button></form>';
+}
+echo '</div><script src="/admin/assets/app-delete.js?v=1" defer></script>';
 admin_foot();
