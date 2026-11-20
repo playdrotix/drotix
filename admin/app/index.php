@@ -15,6 +15,8 @@ $rf = app_referral_overview(1);
 if ($rf['ok']) { $cards[] = array(g($rf['data'], 'referrals_today', 0), 'Referrals today', '/admin/app/referrals/'); }
 $dl = app_account_deletions(30);
 if ($dl['ok']) { $cards[] = array(g($dl['data'], 'last_days', 0), 'Accounts deleted (30 days)', '/admin/app/deletions/'); }
+$ca = app_chat_abuse_list('new', null, 1, 0);
+if ($ca['ok']) { $cc = (array) g($ca['data'], 'counts', array()); $cards[] = array(g($cc, 'today', 0), 'Chat abuse today (' . (int) g($cc, 'review', 0) . ' need review)', '/admin/app/chat/'); }
 $tk = app_list_tickets('active', '', '', 1, 0);
 if ($tk['ok']) { $tc = (array) g($tk['data'], 'counts', array()); $cards[] = array((int) g($tc, 'open', 0) + (int) g($tc, 'in_progress', 0) + (int) g($tc, 'waiting_user', 0), 'Support: open tickets (' . (int) g($tc, 'unread', 0) . ' unread)', '/admin/app/tickets/'); }
 if ($pp['ok']) {

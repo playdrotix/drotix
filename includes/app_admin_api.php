@@ -1007,6 +1007,46 @@ function app_account_deletions($days = 30) {
     return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'total' => app_count($t), 'last_days' => count($items), 'items' => $items));
 }
 
+/* ---------- chat moderation (abusive words blocked by the server in match chat) ----------
+ * Event = {id, user_id, username, player_no, avatar_url, account_status, room_id, message, matched, strikes_24h, strikes_7d,
+ *          muted_until, muted_now_until, strikes_total, severity 'normal'|'review', status 'new'|'reviewed'|'dismissed'|'actioned',
+ *          admin_note, reviewed_at, created_at}
+ * Word  = {id, word, norm, kind 'block'|'allow', active, created_at} */
+/** {status, counts{new, review, today, total}, items[Event]}. $status null = all. */
+function app_chat_abuse_list($status = 'new', $userId = null, $limit = 50, $offset = 0) {
+    $r = app_rpc('admin_chat_abuse_list', array('p_status' => $status, 'p_user_id' => $userId, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset));
+    if ($r['ok'] || !app_has_table('chat_abuse_events')) { return $r; }
+    // read-only fallback (actions need the game functions)
+    $t = 'chat_abuse_events'; $q = array('order' => 'created_at.desc');
+    if ($status) { $q['status'] = 'eq.' . $status; }
+    if ($userId) { $q['user_id'] = 'eq.' . $userId; }
+    list($rows, , $x) = app_select($t, $q, (int) $limit, (int) $offset, false);
+    if (!$x['ok']) { return $r; }
+    $rows = app_ticket_people($rows);
+    $counts = array('new' => app_count($t, array('status' => 'eq.new')), 'review' => app_count($t, array('severity' => 'eq.review', 'status' => 'eq.new')),
+                    'today' => app_count($t, array('created_at' => 'gte.' . date('c', strtotime('today')))), 'total' => app_count($t));
+    return array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'counts' => $counts, 'items' => $rows));
+}
+/** $action: reviewed | dismissed | mute_24h | unmute */
+function app_chat_abuse_review($eventId, $action, $note = '') { return app_rpc('admin_chat_abuse_review', array('p_event_id' => $eventId, 'p_action' => $action, 'p_note' => $note !== '' ? $note : null)); }
+/** {status, items[{user_id, username, player_no, account_status, strikes, last_at, muted_until}]} */
+function app_chat_offenders($days = 7, $limit = 50) { return app_rpc('admin_chat_offenders', array('p_days' => (int) $days, 'p_limit' => (int) $limit)); }
+/** {status, items[Word]} */
+function app_chat_words($search = '') {
+    $r = app_rpc('admin_chat_words', array('p_search' => $search !== '' ? $search : null));
+    if ($r['ok']) { return $r; }
+    $t = app_has_table('chat_words') ? 'chat_words' : app_find_table(array('word', 'kind'), '/word|profan|abuse/');
+    if (!$t) { return $r; }
+    $q = array('order' => 'word.asc'); if ($search !== '') { $q['word'] = 'ilike.*' . pg_safe($search) . '*'; }
+    list($rows, , $x) = app_select($t, $q, 2000, 0, false);
+    return $x['ok'] ? array('ok' => true, 'via' => 'table', 'error' => '', 'data' => array('status' => 'ok', 'items' => $rows)) : $r;
+}
+/** Saving an existing word updates it. -> {status, id, norm} */
+function app_chat_word_save($word, $kind = 'block', $active = true) { return app_rpc('admin_chat_word_save', array('p_word' => $word, 'p_kind' => $kind, 'p_active' => (bool) $active)); }
+function app_chat_word_delete($id) { return app_rpc('admin_chat_word_delete', array('p_id' => $id)); }
+/** -> {status, blocked, matched, cleaned} */
+function app_chat_test($text) { return app_rpc('admin_chat_test', array('p_text' => $text)); }
+
 const APP_UPDATES_BUCKET = 'drotix-app-updates';
 /** One-time signed upload URL (browser uploads the APK straight to Storage; no key in the browser). array(uploadUrl, publicUrl, error) */
 function app_signed_upload($path) {
@@ -1244,6 +1284,7 @@ function app_action_label($a) {
                'appeal_approved' => 'Appeal approved', 'appeal_rejected' => 'Appeal rejected', 'review_appeal' => 'Appeal reviewed', 'appeal_suspend' => 'Suspended (appeal)',
                'tournament_create' => 'Created tournament', 'create_tournament' => 'Created tournament', 'tournament_start' => 'Started tournament', 'generate_bracket' => 'Started tournament',
                'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row', 'delete_account' => 'Deleted player account',
+               'chat_review' => 'Chat report reviewed', 'chat_word_save' => 'Saved chat word', 'chat_word_delete' => 'Deleted chat word',
                'publish_legal' => 'Published legal document', 'publish_app_release' => 'Published app release',
                'create_coupon' => 'Created coupon', 'edit_coupon' => 'Edited coupon', 'enable_coupon' => 'Enabled coupon', 'disable_coupon' => 'Disabled coupon',
                'create_banner' => 'Created home banner', 'edit_banner' => 'Edited home banner', 'delete_banner' => 'Deleted home banner',
@@ -1362,7 +1403,7 @@ function app_head($title, $sub) {
     $groups = array(
         array('Players', 'One player at a time', array(
             'users' => array('/admin/app/users/', 'Players'), 'reports' => array('/admin/app/reports/', 'Reports'),
-            'appeals' => array('/admin/app/appeals/', 'Appeals'), 'tickets' => array('/admin/app/tickets/', 'Support tickets'), 'deletions' => array('/admin/app/deletions/', 'Account deletions'))),
+            'appeals' => array('/admin/app/appeals/', 'Appeals'), 'tickets' => array('/admin/app/tickets/', 'Support tickets'), 'deletions' => array('/admin/app/deletions/', 'Account deletions'), 'chat' => array('/admin/app/chat/', 'Chat moderation'))),
         array('Whole app', 'Applies to all players', array(
             'online' => array('/admin/app/online/', 'Online now'), 'cast' => array('/admin/app/broadcast/', 'Broadcast'),
             'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),
@@ -1377,7 +1418,7 @@ function app_head($title, $sub) {
                     'packs' => 'Coin packs are shown in the Shop of every player of the app.',
                     'refer' => 'Refer & Earn works for every player: a new player who enters a friend\'s code gets +50, the friend gets +100.',
                     'purch' => 'Google Play coin purchases of every player (verified on the server by verify-play-purchase).', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
-    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=7"><script src="/admin/assets/app.js?v=5" defer></script>';
+    echo '<link rel="stylesheet" href="/admin/assets/app.css?v=8"><script src="/admin/assets/app.js?v=5" defer></script>';
     echo '<div class="apptop"><div class="navgroups">';
     foreach ($groups as $gr) {
         echo '<div class="navgroup"><div class="ngh">' . e($gr[0]) . ' <span>' . e($gr[1]) . '</span></div><nav class="subnav">';
