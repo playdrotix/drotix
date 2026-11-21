@@ -44,9 +44,33 @@ return array(
     'session_idle_minutes' => 30,
     'enable_hash_tool'     => false,   // set true ONLY while you create a hash, then set back to false
 
+    
+    // ---------- Email ----------
+    // 'smtp'  = send through your SMTP provider (recommended, reliable)
+    // 'mail'  = PHP mail() (often lands in spam / blocked on shared hosting)
+    'mail_driver'        => 'smtp',
+    'notify_admin_email' => 'support@playdrotix.in',   // '' = admin notifications off
+ 
+    'smtp' => array(
+        'from_email' => 'noreply@playdrotix.in',   // Sender email address
+        'from_name'  => 'Drotix Tic Tac Toe',       // Sender name shown in inbox
+        'reply_to'   => 'support@playdrotix.in',    // optional, '' = none
+ 
+        'host'       => 'mail.playdrotix.in',         // SMTP host name or IP
+        'port'       => 587,                        // 465 (SSL) or 587 (TLS). Avoid 25.
+        'encryption' => 'tls',                      // 'ssl' for port 465, 'tls' for port 587, '' = none
+        'username'   => 'noreply@playdrotix.in',
+        // Better: set env variable SMTP_PASSWORD on the server.
+        'password'   => getenv('SMTP_PASSWORD') ?: 'Pravin@7844',  // SMTP password (never commit the password in config.php)
+        'timeout'    => 15,                         // seconds
+    ),
+ 
+    // Kept for backward compatibility with the mail() driver
+    'mail_from' => 'noreply@playdrotix.in',
+ 
     // ---------- Email notifications (optional, uses PHP mail()) ----------
     'notify_admin_email' => 'support@playdrotix.in',          // '' = off
-    'mail_from'          => 'no-reply@playdrotix.in',
+    'mail_from'          => 'noreply@playdrotix.in',
 
     // ---------- Data Explorer (admin -> Data Explorer) ----------
     // Read any Supabase table: add one line per table. 'url' and 'key' can be null to use the
