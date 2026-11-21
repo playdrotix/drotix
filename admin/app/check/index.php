@@ -49,6 +49,12 @@ if ($tok && $test && !$test['ok']) {
     echo '<div class="warn" style="margin-top:14px"><b>The session works, but the game still refuses it.</b><br>1) Check that the account below really has <code>is_admin = true</code>.<br>'
         . '2) Add the <b>Publishable key</b> to <code>includes/config.php</code> as <code>\'supabase_anon_key\' => \'sb_publishable_...\',</code> (Supabase &rarr; Project Settings &rarr; API Keys), then reload this page.</div>';
 }
+if (!$tok) {
+    $pe = (string) cfg('panel_admin_email', 'panel-admin@playdrotix.in');
+    echo '<div class="warn" style="margin-top:14px"><b>Still not working?</b> The database may block setting is_admin from the panel. Run this once in Supabase &rarr; SQL Editor, then reload this page:'
+        . '<pre class="msg" style="margin-top:8px">update drotix.profiles set is_admin = true' . "
+" . 'where id = (select id from auth.users where lower(email) = lower('' . e($pe) . ''));</pre></div>';
+}
 if (!$tok && !$admins) {
     echo '<div class="warn" style="margin-top:14px"><b>Fix:</b> make your own app account an admin with the form below (use the email you sign in with in the DROTIX app).</div>';
 }

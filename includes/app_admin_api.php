@@ -131,7 +131,12 @@ function app_admin_token($force = false) {
         else {
             list($rows, , $rr) = app_select($pt, array('is_admin' => 'eq.true', 'select' => $idc), 10, 0, false);
             if (!$rr['ok']) { $steps[] = array(false, 'Could not read profiles: ' . $rr['error']); }
-            elseif (!$rows) { $steps[] = array(false, 'No player has is_admin = true yet.'); }
+            elseif (!$rows) {
+                $steps[] = array(true, 'No player has is_admin = true: using the panel\'s own system admin account.');
+                list($pok, $pmsg, $pemail) = app_ensure_panel_admin();
+                $steps[] = array($pok, $pmsg);
+                if ($pok) { $email = $pemail; }
+            }
             else {
                 $steps[] = array(true, count($rows) . ' app admin profile(s) found.');
                 foreach ($rows as $r) {
@@ -161,6 +166,38 @@ function app_admin_token($force = false) {
     $_SESSION['app_admin_tok'] = $tok ? array('token' => $tok, 'exp' => $exp, 'email' => $email) : array('fail' => time(), 'exp' => 0, 'token' => null, 'email' => $email);
     return $tok;
 }
+/**
+ * The panel's own system admin (no real player needed): auth user + profile with is_admin = true.
+ * Email: 'panel_admin_email' in config.php, default panel-admin@playdrotix.in. Random password nobody uses
+ * (the panel opens its session with the service key). Returns array(ok, message, email).
+ */
+function app_ensure_panel_admin() {
+    $email = strtolower((string) cfg('panel_admin_email', 'panel-admin@playdrotix.in'));
+    $uid = '';
+    foreach (app_auth_search_email($email, 5) as $u) { if (strtolower((string) g($u, 'email')) === $email) { $uid = (string) $u['id']; break; } }
+    if ($uid === '') {
+        $c = app_http('POST', '/auth/v1/admin/users', array('email' => $email, 'password' => bin2hex(random_bytes(24)), 'email_confirm' => true,
+            'user_metadata' => array('username' => 'drotix_admin', 'full_name' => 'DROTIX Admin Panel', 'panel_admin' => true)));
+        if (!$c['ok'] || !g($c['data'], 'id')) { return array(false, 'Could not create the panel admin login (' . $email . '): ' . $c['error'], ''); }
+        $uid = (string) $c['data']['id'];
+        usleep(400000);   // let a profile trigger (if the game has one) create the profile row
+    }
+    $pt = app_profiles_table(); $idc = app_profile_idcol(); $pc = app_cols($pt);
+    list($rows, , ) = app_select($pt, array($idc => 'eq.' . $uid), 1, 0, false);
+    if (!$rows) {
+        $row = array($idc => $uid, 'is_admin' => true);
+        if (isset($pc['username'])) { $row['username'] = 'drotix_admin'; }
+        if (isset($pc['display_name'])) { $row['display_name'] = 'DROTIX Admin'; }
+        $x = app_db('POST', $pt, array(), app_fill_required($pt, $row), 'return=minimal');
+        if (!$x['ok']) { return array(false, 'Login created, but the game profile could not be created: ' . $x['error'], ''); }
+    } elseif (!g($rows[0], 'is_admin')) {
+        $x = app_db('PATCH', $pt, array($idc => 'eq.' . $uid), array('is_admin' => true), 'return=minimal');
+        if (!$x['ok']) { return array(false, 'Could not set is_admin on the panel admin profile: ' . $x['error'] . ' (run the SQL from the Admin check page)', ''); }
+    }
+    audit_log('app_panel_admin_ready', $email, $uid);
+    return array(true, 'Panel admin account ready: ' . $email, $email);
+}
+
 /** Short reason why there is no admin session ('' when fine). */
 function app_admin_why() {
     foreach (array_reverse(isset($_SESSION['app_admin_steps']) ? $_SESSION['app_admin_steps'] : array()) as $st) { if (!$st[0]) { return $st[1]; } }

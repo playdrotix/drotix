@@ -890,6 +890,33 @@
       "lastAccessed": "2026-11-21T02:50:53.556Z",
       "accessCount": 0,
       "expiresAt": "2026-12-21T02:50:53.556Z"
+    },
+    "cmd-1795229936123": {
+      "key": "cmd-1795229936123",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && grep -n \\\"    \\\\$tok = null; \\\\$exp = 0;\\\\|    \\\\$steps = array(); \\\\$tok = null;\\\\|    \\\\$email = (string) cfg('app_admin_email', '');\\\" includes/app_admin_api.php | head; grep -n \\\"elseif (!\\\\$rows) { \\\\$steps\\\\[\\\\] = array(false, 'No player has is_admin = true yet.'); }\\\" includes/app_admin_api.php\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-21T02:58:56.123Z",
+      "lastAccessed": "2026-11-21T02:58:56.123Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-21T02:58:56.123Z"
+    },
+    "cmd-1795229969145": {
+      "key": "cmd-1795229969145",
+      "value": "{\"command\":\"S=\\\"C:/Users/CHANDR~1/AppData/Local/Temp/claude/11b5fcc5c5c1de14/58d80096-dd91-410b-82a4-7f691cb202df/scratchpad\\\"; cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python \\\"$S/patch_paneladmin.py\\\" includes/app_admin_api.php && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-21T02:59:29.145Z",
+      "lastAccessed": "2026-11-21T02:59:29.145Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-21T02:59:29.145Z"
+    },
+    "cmd-1795229976820": {
+      "key": "cmd-1795229976820",
+      "value": "{\"command\":\"cd \\\"/c/Users/chandra kumari/Documents/Github/drotix\\\" && python - <<'EOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-11-21T02:59:36.820Z",
+      "lastAccessed": "2026-11-21T02:59:36.820Z",
+      "accessCount": 0,
+      "expiresAt": "2026-12-21T02:59:36.820Z"
     }
   },
   "version": "3.0.0"
