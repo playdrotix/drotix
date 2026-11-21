@@ -168,6 +168,13 @@ function app_admin_why() {
 }
 function app_admin_email() { return isset($_SESSION['app_admin_tok']['email']) ? (string) $_SESSION['app_admin_tok']['email'] : ''; }
 
+/** Call an RPC with values by POSITION: the real argument names are read from the database schema.
+ *  $fallbackNames is used when the schema does not list the function. */
+function app_rpc_pos($fn, $values, $fallbackNames) {
+    $sc = app_schema(); $names = isset($sc['rpc_args'][$fn]) && $sc['rpc_args'][$fn] ? $sc['rpc_args'][$fn] : $fallbackNames;
+    $params = array(); foreach (array_values($values) as $i => $v) { if (isset($names[$i])) { $params[$names[$i]] = $v; } }
+    return app_rpc($fn, $params);
+}
 /** Call a drotix RPC: as an app admin when possible, otherwise with the service key. */
 function app_rpc($fn, $params = array()) {
     if (!app_valid_ident($fn)) { return array('ok' => false, 'data' => null, 'error' => 'Invalid function'); }
@@ -193,7 +200,7 @@ function app_rpc($fn, $params = array()) {
  */
 function app_schema() {
     if ($GLOBALS['__app_schema'] !== null) { return $GLOBALS['__app_schema']; }
-    $c = isset($_SESSION['app_schema3']) ? $_SESSION['app_schema3'] : null;
+    $c = isset($_SESSION['app_schema4']) ? $_SESSION['app_schema4'] : null;
     if (!$c || $c['at'] < time() - 600 || isset($_GET['refresh_schema'])) {
         $r = app_http('GET', '/rest/v1/', null, array('Accept-Profile' => APP_SCHEMA, 'Accept' => 'application/openapi+json'));
         $c = array('at' => time(), 'ok' => false, 'error' => $r['error'], 'tables' => array(), 'rpc' => array());
@@ -211,9 +218,15 @@ function app_schema() {
                 $c['tables'][$t] = array('cols' => $cols, 'pk' => $pk, 'required' => array_values((array) g($def, 'required', array())), 'enums' => $enums, 'defaults' => $defaults);
             }
             ksort($c['tables']);
-            foreach (array_keys((array) g($r['data'], 'paths', array())) as $p) { if (strpos($p, '/rpc/') === 0) { $c['rpc'][] = substr($p, 5); } }
+            foreach ((array) g($r['data'], 'paths', array()) as $p => $def) {
+                if (strpos($p, '/rpc/') !== 0) { continue; }
+                $fn = substr($p, 5); $c['rpc'][] = $fn;
+                $args = array();   // argument names in declared order (for calls by position)
+                foreach ((array) g($def, 'post.parameters', array()) as $prm) { foreach (array_keys((array) g($prm, 'schema.properties', array())) as $a) { $args[] = $a; } }
+                $c['rpc_args'][$fn] = $args;
+            }
         }
-        if ($c['ok']) { $_SESSION['app_schema3'] = $c; }
+        if ($c['ok']) { $_SESSION['app_schema4'] = $c; }
     }
     return $GLOBALS['__app_schema'] = $c;
 }
@@ -1047,6 +1060,47 @@ function app_chat_word_delete($id) { return app_rpc('admin_chat_word_delete', ar
 /** -> {status, blocked, matched, cleaned} */
 function app_chat_test($text) { return app_rpc('admin_chat_test', array('p_text' => $text)); }
 
+/* ---------- Nearby & Rank ----------
+ * overview: {ranked_players, nearby_joined, nearby_sharing_now, nearby_ghost, nearby_banned, rp_given_today, rp_taken_today,
+ *            ranked_challenges_today, missions_claimed_today, ad_tickets_today, rank_ups_today, tiers[{tier, label, players}], settings{}} */
+function app_rank_overview() { return app_rpc('admin_rank_overview'); }
+/** {total, items[{user_id, username, player_no, tier, tier_override, rp, tickets, wins, losses, draws, nearby_enabled, ghost, banned, last_location_at, account_status}]} */
+function app_rank_players($search, $tier, $limit = 50, $offset = 0) {
+    return app_rpc('admin_rank_players', array('p_search' => $search !== '' ? $search : null, 'p_tier' => $tier !== '' ? $tier : null, 'p_limit' => (int) $limit, 'p_offset' => (int) $offset));
+}
+/** {profile, rank, stats{matches, friends, streak_days}, nearby{}, last_location{lat, lng, at}, ledger[], promotions[], mission_claims[], ranked_challenges[]}. Audited by the server. */
+function app_rank_player($uid) { return app_rpc('admin_rank_player', array('p_user' => $uid)); }
+/** $tierOverride: 'bronze'|'silver'|'gold'|'elite' lock, '' back to automatic, null unchanged. $tickets null = unchanged. */
+function app_rank_update($uid, $tierOverride, $rpDelta, $tickets, $note) {
+    return app_rpc_pos('admin_rank_update', array($uid, $tierOverride, $rpDelta === null ? null : (int) $rpDelta, $tickets === null ? null : (int) $tickets, $note), array('p_user', 'p_tier_override', 'p_rp_delta', 'p_tickets', 'p_note'));
+}
+function app_nearby_ban($uid, $ban, $reason) { return app_rpc_pos('admin_nearby_ban', array($uid, (bool) $ban, $reason !== '' ? $reason : null), array('p_user', 'p_ban', 'p_reason')); }
+function app_rank_tiers() {
+    if (!app_has_table('rank_tiers')) { return array(); }
+    $c = app_cols('rank_tiers');
+    list($rows, , ) = app_select('rank_tiers', isset($c['sort']) ? array('order' => 'sort.asc') : array(), 20, 0, false);
+    return $rows;
+}
+function app_rank_tier_save($tier, $data) { return app_rpc_pos('admin_rank_tier_save', array($tier, (object) $data), array('p_tier', 'p_data')); }
+function app_rank_settings_save($data) { return app_rpc_pos('admin_rank_settings_save', array((object) $data), array('p_data')); }
+/** {items[{id, code, title, description, kind, target, reward_rp, reward_tickets, active, sort, claims_today}]} */
+function app_rank_missions() { return app_rpc('admin_rank_missions'); }
+function app_rank_mission_save($id, $data) { return app_rpc_pos('admin_rank_mission_save', array($id ?: null, (object) $data), array('p_id', 'p_data')); }
+function app_rank_mission_delete($id) { return app_rpc_pos('admin_rank_mission_delete', array($id), array('p_id')); }
+function app_rank_season_reset($keepPercent, $seasonName) { return app_rpc_pos('admin_rank_season_reset', array((int) $keepPercent, $seasonName, 'RESET'), array('p_keep_percent', 'p_season_name', 'p_confirm')); }
+/** Latest rank promotion (for the live toast). */
+function app_rank_latest_promotion() {
+    if (!app_has_table('rank_promotions')) { return null; }
+    $c = app_cols('rank_promotions');
+    list($rows, , ) = app_select('rank_promotions', isset($c['created_at']) ? array('order' => 'created_at.desc') : array(), 1, 0, false);
+    return $rows ? $rows[0] : null;
+}
+function app_tier_badge($t, $locked = false) {
+    $c = array('bronze' => '#CD7F32', 'silver' => '#C0C0C8', 'gold' => '#FFC24D', 'elite' => '#ED1B76');
+    $col = isset($c[$t]) ? $c[$t] : '#A8A8B5';
+    return '<span class="badge" style="color:' . $col . ';border-color:' . $col . '">' . e(ucfirst((string) $t ?: '-')) . '</span>' . ($locked ? ' <span class="badge b-gold" title="tier locked by admin">locked</span>' : '');
+}
+
 const APP_UPDATES_BUCKET = 'drotix-app-updates';
 /** One-time signed upload URL (browser uploads the APK straight to Storage; no key in the browser). array(uploadUrl, publicUrl, error) */
 function app_signed_upload($path) {
@@ -1284,7 +1338,9 @@ function app_action_label($a) {
                'appeal_approved' => 'Appeal approved', 'appeal_rejected' => 'Appeal rejected', 'review_appeal' => 'Appeal reviewed', 'appeal_suspend' => 'Suspended (appeal)',
                'tournament_create' => 'Created tournament', 'create_tournament' => 'Created tournament', 'tournament_start' => 'Started tournament', 'generate_bracket' => 'Started tournament',
                'tournament_status' => 'Tournament status', 'tournament_notify' => 'Notified tournament', 'row_update' => 'Edited data row', 'row_insert' => 'Added data row', 'row_delete' => 'Deleted data row', 'delete_account' => 'Deleted player account',
-               'chat_review' => 'Chat report reviewed', 'chat_word_save' => 'Saved chat word', 'chat_word_delete' => 'Deleted chat word',
+               'chat_review' => 'Chat report reviewed', 'rank_update' => 'Changed player rank', 'nearby_ban' => 'Nearby ban', 'nearby_unban' => 'Nearby unban',
+               'rank_tier_save' => 'Edited rank tier', 'rank_settings_save' => 'Changed rank settings', 'rank_mission_save' => 'Saved mission', 'rank_mission_delete' => 'Deleted mission',
+               'rank_season_reset' => 'New season (RP reset)', 'rank_player_view' => 'Viewed player rank', 'chat_word_save' => 'Saved chat word', 'chat_word_delete' => 'Deleted chat word',
                'publish_legal' => 'Published legal document', 'publish_app_release' => 'Published app release',
                'create_coupon' => 'Created coupon', 'edit_coupon' => 'Edited coupon', 'enable_coupon' => 'Enabled coupon', 'disable_coupon' => 'Disabled coupon',
                'create_banner' => 'Created home banner', 'edit_banner' => 'Edited home banner', 'delete_banner' => 'Deleted home banner',
@@ -1294,6 +1350,7 @@ function app_action_label($a) {
 /** Error text for a failed game function, with the fix when no app admin exists. */
 function app_rpc_error($r) {
     $e = (string) $r['error'];
+    if (stripos($e, 'forbidden: admin only') !== false && app_admin_token()) { return 'You are not an admin (the account the panel uses has is_admin = false). Fix it in Mobile App -> Admin check.'; }
     if (stripos($e, 'forbidden') !== false || (isset($r['status']) && $r['status'] === 401)) {
         $why = app_admin_token() ? 'the admin session was refused' : app_admin_why();
         $e .= ' (' . ($why !== '' ? $why . ' ' : '') . 'Open Mobile App -> Admin check to fix it.)';
@@ -1407,7 +1464,7 @@ function app_head($title, $sub) {
         array('Whole app', 'Applies to all players', array(
             'online' => array('/admin/app/online/', 'Online now'), 'cast' => array('/admin/app/broadcast/', 'Broadcast'),
             'legal' => array('/admin/app/legal/', 'Privacy & Terms'), 'rel' => array('/admin/app/releases/', 'App update'),
-            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'banners' => array('/admin/app/banners/', 'Home banners'), 'packs' => array('/admin/app/packs/', 'Coin packs'), 'purch' => array('/admin/app/purchases/', 'Purchases'), 'refer' => array('/admin/app/referrals/', 'Refer & Earn'))),
+            'tour' => array('/admin/app/tournaments/', 'Tournaments'), 'coupons' => array('/admin/app/coupons/', 'Coupons'), 'banners' => array('/admin/app/banners/', 'Home banners'), 'packs' => array('/admin/app/packs/', 'Coin packs'), 'purch' => array('/admin/app/purchases/', 'Purchases'), 'refer' => array('/admin/app/referrals/', 'Refer & Earn'), 'rank' => array('/admin/app/rank/', 'Nearby & Rank'))),
         array('Data', 'Reports & raw data', array(
             'dash' => array('/admin/app/', 'Stats'), 'data' => array('/admin/app/data/', 'All data'), 'audit' => array('/admin/app/audit/', 'Audit log'), 'check' => array('/admin/app/check/', 'Admin check'))),
     );
@@ -1416,6 +1473,7 @@ function app_head($title, $sub) {
                     'rel' => 'One update for the whole app: every player on an older version sees the update screen.',
                     'tour' => 'Tournaments are open to all players.', 'banners' => 'Home banners are shown on the Home screen of every player of the app.',
                     'packs' => 'Coin packs are shown in the Shop of every player of the app.',
+                    'rank' => 'Ranks, RP, missions and the Nearby map work the same for every player of the app.',
                     'refer' => 'Refer & Earn works for every player: a new player who enters a friend\'s code gets +50, the friend gets +100.',
                     'purch' => 'Google Play coin purchases of every player (verified on the server by verify-play-purchase).', 'coupons' => 'A coupon works for every player of the app: any player can enter it once (on the code screen right after sign-up).');
     echo '<link rel="stylesheet" href="/admin/assets/app.css?v=8"><script src="/admin/assets/app.js?v=5" defer></script>';
